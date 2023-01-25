@@ -11,7 +11,7 @@ export type GraphQLSelectionSet = (builder: GraphQLSelectionSetBuilder) => void
 
 export type GraphQLSelectionSetBuilder = {
   add(name: string, set?: GraphQLSelectionSet): void,
-  addConnection(name: string, options?: { args: any, alias: string }, set?: GraphQLSelectionSet): void,
+  addConnection(name: string, options?: { args?: any, alias?: string }, set?: GraphQLSelectionSet): void,
 }
 
 export type Money = {
@@ -38,6 +38,14 @@ export type ProductVariant = {
     id: string,
     handle: string,
   },
+}
+
+export type Collection = {
+  id: string,
+  handle: string,
+  title: string,
+  description?: string,
+  descriptionHtml?: string,
 }
 
 export type Product = {
@@ -80,9 +88,4 @@ export type Shop = {
   id: string,
   name: string,
   moneyFormat: string,
-}
-
-export function money(m: Money, factor: number = 1) {
-  const num = Number(m.amount) * factor
-  return `${num.toFixed(2)} ${m.currencyCode}`
 }

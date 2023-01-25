@@ -1,37 +1,25 @@
 import { useState, useEffect } from 'react'
+import { Transition } from '@headlessui/react'
 import '@/styles/globals.css'
 import Head from 'next/head'
 import Link from 'next/link'
-import { SWRConfig } from 'swr'
+import Image from 'next/image'
 import type { AppProps } from 'next/app'
 import { Inter } from '@next/font/google'
 import ShopContext from '@/common/ShopContext'
-import { Cart, Shop } from '@/common/interfaces'
+import { Cart, Shop, Collection, Money } from '@/common/interfaces'
+import Nav from '@/common/Nav'
 
 const inter = Inter({ subsets: ['latin'] })
 
-async function fetcher(resource: RequestInfo | URL, init?: RequestInit) {
-  const res = await fetch(resource, init)
-  return await res.json()
-}
-
 export default function App({ Component, pageProps }: AppProps) {
-  const [shop, setShop] = useState<Shop | undefined>()
-  const [cart, setCart] = useState<Cart | undefined>()
+  const [shop, setShop] = useState<Shop | null>(null)
+  const [cart, setCart] = useState<Cart | null>(null)
+  const [collections, setCollections] = useState<Collection[]>([])
+  const [overlay, setOverlayRaw] = useState(false)
 
-  async function getShop() {
-    const res = await fetch('/api/shop')
-    const json = await res.json()
-    setShop(json)
-  }
-
-  async function getCart() {
-    const res = await fetch('/api/cart?' + new URLSearchParams({
-      id: localStorage.getItem('checkout') || ''
-    }))
-
-    const json = await res.json()
-    updateCart(json)
+  function setOverlay(open: boolean) {
+    setOverlayRaw(open)
   }
 
   function updateCart(cart: Cart) {
@@ -40,9 +28,37 @@ export default function App({ Component, pageProps }: AppProps) {
   }
 
   useEffect(() => {
+    async function getShop() {
+      const res = await fetch('/api/shop')
+      const json = await res.json()
+      setShop(json.shop)
+      setCollections(json.collections || [])
+    }
+
+    async function getCart() {
+      const res = await fetch('/api/cart?' + new URLSearchParams({
+        id: localStorage.getItem('checkout') || ''
+      }))
+
+      const json = await res.json()
+      updateCart(json)
+    }
+
     getShop()
     getCart()
   }, [])
+
+  function moneyFormat(m: Money, factor = 1) {
+    const num = (Number(m.amount) * factor).toLocaleString('en-US', { minimumFractionDigits: 2 })
+
+    if (shop?.moneyFormat) {
+      return shop.moneyFormat.replace("{{amount}}", num)
+    } else {
+      return `${num} ${m.currencyCode}`
+    }
+  }
+
+  const link = 'text-gray-100 hover:text-gray-300 hover:underline'
 
   return (
     <>
@@ -53,24 +69,216 @@ export default function App({ Component, pageProps }: AppProps) {
       </Head>
       <div className={inter.className}>
         <div className="min-h-screen">
-          <SWRConfig value={{ fetcher }}>
-            <ShopContext.Provider
-              value={{
-                shop,
-                cart,
-                updateCart,
-              }}
-            >
-              <Component {...pageProps} />
-            </ShopContext.Provider>
-          </SWRConfig>
+          <ShopContext.Provider
+            value={{
+              shop,
+              cart,
+              collections,
+              overlay,
+              setOverlay,
+              updateCart,
+              moneyFormat,
+            }}
+          >
+            <Nav />
+            <Component {...pageProps} />
+          </ShopContext.Provider>
         </div>
         <footer className="bg-zinc-900 py-16 px-8 mt-12 flex justify-center gap-x-8">
-          <Link className="text-gray-100 hover:text-gray-300 hover:underline" href="/">Home</Link>
-          <Link className="text-gray-100 hover:text-gray-300 hover:underline" href="/catalog">Catalog</Link>
-          <Link className="text-gray-100 hover:text-gray-300 hover:underline" href="/cart">Cart</Link>
+          <Link className={link} href="/">Home</Link>
+          <Link className={link} href="/catalog">Catalog</Link>
+          <Link className={link} href="/cart">Cart</Link>
         </footer>
       </div>
+      {cart &&
+        <CartOverlay
+          cart={cart}
+          updateCart={updateCart}
+          open={overlay}
+          setOpen={setOverlay}
+          moneyFormat={moneyFormat}
+        />}
     </>
+  )
+}
+
+function CartOverlay({
+  cart,
+  updateCart,
+  open,
+  setOpen,
+  moneyFormat,
+}: {
+  cart: Cart,
+  updateCart: (cart: Cart) => void,
+  open: boolean,
+  setOpen: (open: boolean) => void,
+  moneyFormat: (money: Money, factor?: number) => string,
+}) {
+  const [updating, setUpdating] = useState(false)
+  const [quantities, setQuantities] = useState<string[]>([])
+
+  function setQuantityInput(index: number, text: string) {
+    setQuantities(q => {
+      const clone = [...q]
+      clone[index] = text
+      return clone
+    })
+  }
+
+  async function setLineQuantity(id: string, num: number) {
+    if (!cart) {
+      return
+    }
+
+    setUpdating(true)
+
+    const updated = await fetch('/api/updateLine', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        checkout: cart.id,
+        lineItem: id,
+        quantity: Math.max(1, Math.min(99, num)),
+      }),
+    })
+
+    const json = await updated.json()
+    setUpdating(false)
+    updateCart(json)
+  }
+
+  async function removeLine(id: string) {
+    if (!cart) {
+      return
+    }
+
+    setUpdating(true)
+
+    const updated = await fetch('/api/removeLine', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ checkout: cart.id, lineItem: id }),
+    })
+
+    const json = await updated.json()
+    setUpdating(false)
+    updateCart(json)
+  }
+
+  useEffect(() => {
+    if (cart) {
+      setQuantities(cart.lineItems.map(item => String(item.quantity)))
+    }
+  }, [cart])
+
+  return (
+    <Transition show={open}>
+      <div className="z-[9999] fixed inset-0">
+        <Transition.Child
+          onClick={() => setOpen(false)}
+          className="absolute z-10 bg-gray-300 inset-0 opacity-75"
+          enter="transition-opacity duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-75"
+          leave="transition-opacity duration-300"
+          leaveFrom="opacity-75"
+          leaveTo="opacity-0"
+        />
+        <Transition.Child
+          className="absolute z-20 right-4 left-4 sm:left-auto inset-y-4"
+          enter="transition ease-in-out duration-300 transform"
+          enterFrom="translate-x-full opacity-0"
+          enterTo="translate-x-0 opacity-100 scale-x-100"
+          leave="transition ease-in-out duration-300 transform"
+          leaveFrom="translate-x-0 opacity-100"
+          leaveTo="translate-x-full opacity-0"
+        >
+          <div className="bg-white rounded-lg shadow-lg border border-gray-300 flex flex-col sm:w-[30rem] h-full">
+            <h2 className="font-semibold text-3xl mb-3 pt-4 px-4">Your cart</h2>
+            <div className="flex-1 overflow-auto">
+              <ul className={`${updating ? 'opacity-75' : ''} flex flex-col gap-y-8`}>
+                {cart?.lineItems.map((item, index) => (
+                  <li key={item.id} className="px-4 flex items-center">
+                    <div className="flex items-center gap-x-2 mr-6">
+                      <div className="flex-none relative w-[3rem] border rounded aspect-square shadow-sm bg-white">
+                        <Image
+                          fill
+                          className="object-contain"
+                          src={item.variant.image.src || '/600.svg'}
+                          alt={item.variant.image.altText || item.variant.title}
+                          sizes="4rem"
+                        />
+                      </div>
+                      <div className="ml-3">
+                        <Link
+                          onClick={() => setOpen(false)}
+                          href={{
+                            pathname: '/product/[id]',
+                            query: { id: item.variant.product.handle },
+                          }}
+                          className="font-semibold text-gray-900 hover:underline"
+                        >
+                          {item.title}
+                        </Link>
+                        <div className="text-gray-700">{item.variant.title}</div>
+                        <div className="text-gray-700 text-sm font-semibold">
+                          {moneyFormat(item.variant.price, item.quantity)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="ml-auto flex justify-between items-center gap-x-2">
+                      <input
+                        type="text"
+                        className="min-w-0 w-[4rem] text-center px-2 py-1 @control"
+                        onBlur={e => {
+                          const num = Number(e.target.value)
+                          if (Number.isNaN(num)) {
+                            setQuantityInput(index, String(item.quantity))
+                          } else if (item.quantity !== num) {
+                            setLineQuantity(item.id, num)
+                          }
+                        }}
+                        onChange={e => setQuantityInput(index, e.target.value)}
+                        value={quantities[index] === undefined ? 0 : quantities[index]}
+                      />
+                    </div>
+                    <button
+                      disabled={updating}
+                      className="ml-6 p-1 text-red-500 rounded hover:shadow-sm border border-transparent hover:border-gray-300 hover:bg-white"
+                      type="button"
+                      onClick={() => removeLine(item.id)}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                        <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="px-4 pb-4 border-t border-gray-300 flex gap-x-3 items-center justify-end pt-4">
+              <span className="font-semibold text-gray-700 text-sm">
+                {cart && moneyFormat(cart.subtotalPrice)} Total
+              </span>
+              <button
+                onClick={() => setOpen(false)}
+                className="@btn px-2 py-1"
+                type="button"
+              >
+                Close
+              </button>
+              <Link
+                onClick={() => setOpen(false)}
+                href="/cart"
+                className="@btn-purple px-2 py-1"
+              >
+                View cart
+              </Link>
+            </div>
+          </div>
+        </Transition.Child>
+      </div>
+    </Transition>
   )
 }
