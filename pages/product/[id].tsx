@@ -1,13 +1,60 @@
 import Head from 'next/head'
 import { useState, useEffect } from 'react'
-import { GetServerSideProps } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
 import Nav from '@/common/Nav'
-import { client } from '@/common/shopify'
-import { Cart, Product, Shop, money } from '@/common/interfaces'
+import { Product, money } from '@/common/interfaces'
+import { useShop } from '@/common/ShopContext'
+import { useRouter } from 'next/router'
 
-export default function ProductPage({ product, cart: cartRaw, shop }: { product: Product, cart: Cart, shop: Shop }) {
+export default function ProductPage() {
+  const router = useRouter()
+  const id = String(router.query.id || '')
+
+  const [product, setProduct] = useState<Product | null>(null)
+
+  useEffect(() => {
+    async function getProduct() {
+      const res = await fetch('/api/product?' + new URLSearchParams({ id }))
+      const json = await res.json()
+      setProduct(json)
+    }
+
+    getProduct()
+  }, [])
+
+  return (
+    <>
+      <Head>
+        <title>{product?.title || 'Product'}</title>
+      </Head>
+      <Nav />
+      {product ? <ProductDetails product={product} /> : <ProductSkeleton />}
+    </>
+  )
+}
+
+function ProductSkeleton() {
+  return (
+    <div className="container max-w-4xl mx-auto">
+      <div className="animate-pulse flex items-start">
+        <div className="w-[20rem] flex-none">
+          <div className="rounded-lg shadow-sm bg-gray-200 border border-gray-300 aspect-square" />
+        </div>
+        <div className="ml-8 w-full flex flex-col gap-y-4">
+          <div className="bg-gray-300 rounded-lg h-5 w-full max-w-[30rem]"></div>
+          <div className="bg-gray-300 rounded-full h-3 w-full max-w-[10rem]"></div>
+          <div className="bg-gray-300 rounded-full h-3 w-full max-w-[12rem]"></div>
+          <div className="bg-gray-300 rounded-full h-3 w-full max-w-[18rem]"></div>
+          <div className="bg-gray-300 rounded-full h-3 w-full max-w-[8rem]"></div>
+          <div className="bg-gray-300 rounded-full h-3 w-full max-w-[18rem]"></div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ProductDetails({ product }: { product: Product }) {
   const [selected, setSelected] = useState(() => {
     const obj: Record<string, string> = {}
     for (const option of product.options) {
@@ -18,7 +65,7 @@ export default function ProductPage({ product, cart: cartRaw, shop }: { product:
   const [quantity, setQuantityRaw] = useState(1)
   const [quantityText, setQuantityText] = useState(String(quantity))
   const [image, setImage] = useState(product.images[0])
-  const [cart, setCart] = useState(cartRaw)
+  const { cart, updateCart } = useShop()
 
   // maybe find a better way to get a variant from product options?
   // don't like it when things are 'stringly typed'
@@ -32,7 +79,7 @@ export default function ProductPage({ product, cart: cartRaw, shop }: { product:
   }
 
   async function addLine() {
-    if (!variant) {
+    if (!variant || !cart) {
       return false
     }
 
@@ -47,7 +94,7 @@ export default function ProductPage({ product, cart: cartRaw, shop }: { product:
     })
 
     const json = await updated.json()
-    setCart(json)
+    updateCart(json)
 
     return true
   }
@@ -79,139 +126,141 @@ export default function ProductPage({ product, cart: cartRaw, shop }: { product:
   }
 
   return (
-    <>
-      <Head>
-        <title>{product.title}</title>
-      </Head>
-      <Nav title={shop.name} quantity={cart.lineItems.length} />
-      <div className="container max-w-4xl mx-auto">
-        <div className="flex items-start">
-          <div className="w-[20rem] flex-none">
-            <div className="relative w-full aspect-square mb-3">
-              <Image
-                fill
-                src={image?.src || '/600.svg'}
-                alt={image?.altText || ''}
-                className="object-contain rounded-lg"
-                sizes="640px"
-              />
-            </div>
-            <div className="grid grid-cols-4 gap-2">
-              {product.images.map(img => (
-                <div
-                  key={img.id}
-                  onClick={() => setImage(img)}
-                  className="relative cursor-pointer w-full aspect-square rounded border border-gray-300 bg-white"
-                >
-                  <Image
-                    fill
-                    src={img.src || '/600.svg'}
-                    alt={img.altText || ''}
-                    className="object-cover"
-                    sizes="120px"
-                  />
-                </div>
-              ))}
-            </div>
+    <div className="container max-w-4xl mx-auto">
+      <div className="flex items-start">
+        <div className="w-[20rem] flex-none">
+          <div className="relative w-full aspect-square mb-3">
+            <Image
+              fill
+              src={image?.src || '/600.svg'}
+              alt={image?.altText || ''}
+              className="object-contain rounded-lg"
+              sizes="640px"
+            />
           </div>
-          <div className="ml-8">
-            <h2 className="text-3xl font-semibold mb-4">{product.title}</h2>
-            <div className="flex gap-x-2 items-center">
-              {price}
-              {variant && !variant.available &&
-                <div className="rounded-full px-2 text-xs font-semibold bg-gray-300 text-gray-700">
-                  Sold out
-                </div>}
-            </div>
-            {product.options.map(option => (
-              <div key={option.id} className="mb-3 mt-2">
-                <span className="font-semibold text-sm text-gray-700 mb-1">
-                  {option.name}
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {option.values.map(({ value }) =>
-                    <button
-                      key={value}
-                      className={
-                        'px-2 py-1 border rounded min-w-[3rem] '
-                        + (selected[option.id] === value
-                          ? 'bg-gray-900 border-gray-900 text-gray-50'
-                          : 'bg-white border-gray-400')}
-                      onClick={() => setSelected(s => ({ ...s, [option.id]: value }))}
-                      type="button"
-                    >
-                      {value}
-                    </button>
-                  )}
-                </div>
+          <div className="grid grid-cols-4 gap-2">
+            {product.images.map(img => (
+              <div
+                key={img.id}
+                onClick={() => setImage(img)}
+                className="relative cursor-pointer w-full aspect-square rounded border border-gray-300 bg-white"
+              >
+                <Image
+                  fill
+                  src={img.src || '/600.svg'}
+                  alt={img.altText || ''}
+                  className="object-cover"
+                  sizes="120px"
+                />
               </div>
             ))}
-            <div className="mb-3 mt-2 w-[20rem]">
-              <label className="font-semibold text-sm text-gray-700 mb-1" htmlFor="quantity">
-                Quantity
-              </label>
-              <div className="flex gap-x-2">
-                <button
-                  disabled={!variant?.available}
-                  className="p-1 border border-gray-400 bg-white disabled:bg-gray-200 rounded shadow-sm"
-                  type="button"
-                  onClick={() => setQuantity(quantity - 1)}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12h-15" />
-                  </svg>
-                </button>
-                <input
-                  disabled={!variant?.available}
-                  className="min-w-0 w-[5rem] text-center px-2 py-1 border border-gray-400 bg-white disabled:bg-gray-200 rounded shadow-sm"
-                  onBlur={e => {
-                    const num = Number(e.target.value)
-                    if (!Number.isNaN(num)) {
-                      setQuantity(num)
-                    } else {
-                      setQuantityText(String(quantity))
-                    }
-                  }}
-                  onChange={e => setQuantityText(e.target.value)}
-                  value={quantityText}
-                  id="quantity"
-                  type="text"
-                />
-                <button
-                  disabled={!variant?.available}
-                  className="p-1 border border-gray-400 bg-white disabled:bg-gray-200 rounded shadow-sm"
-                  type="button"
-                  onClick={() => setQuantity(quantity + 1)}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            {variant?.available
-              ? <AddToCartButton onClick={addLine} cart={cart} onUpdate={c => setCart(c)} />
-              : (
-                <div className="inline-block px-3 py-1 rounded bg-gray-200 border border-gray-400 shadow-sm">
-                  Sold out
-                </div>
-              )}
-            {product.descriptionHtml &&
-              <article
-                className="prose prose-sm text-gray-900"
-                dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
-              />}
           </div>
         </div>
+        <div className="ml-8">
+          <h2 className="text-3xl font-semibold mb-4">{product.title}</h2>
+          <div className="flex gap-x-2 items-center">
+            {price}
+            {!variant &&
+              <div className="rounded-full px-2 text-xs font-semibold bg-gray-300 text-gray-700">
+                Not available
+              </div>}
+            {variant && !variant.available &&
+              <div className="rounded-full px-2 text-xs font-semibold bg-gray-300 text-gray-700">
+                Sold out
+              </div>}
+          </div>
+          {product.options.map(option => (
+            <div key={option.id} className="mb-3 mt-2">
+              <span className="font-semibold text-sm text-gray-700 mb-1">
+                {option.name}
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {option.values.map(({ value }) =>
+                  <button
+                    key={value}
+                    className={
+                      'px-2 py-1 border rounded min-w-[3rem] '
+                      + (selected[option.id] === value
+                        ? 'bg-gray-900 border-gray-900 text-gray-50'
+                        : 'bg-white border-gray-400')}
+                    onClick={() => setSelected(s => ({ ...s, [option.id]: value }))}
+                    type="button"
+                  >
+                    {value}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+          <div className="mb-3 mt-2 w-[20rem]">
+            <label className="font-semibold text-sm text-gray-700 mb-1" htmlFor="quantity">
+              Quantity
+            </label>
+            <div className="flex gap-x-2">
+              <button
+                disabled={!variant?.available}
+                className="p-1 border border-gray-400 bg-white disabled:bg-gray-200 rounded shadow-sm"
+                type="button"
+                onClick={() => setQuantity(quantity - 1)}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12h-15" />
+                </svg>
+              </button>
+              <input
+                disabled={!variant?.available}
+                className="min-w-0 w-[5rem] text-center px-2 py-1 border border-gray-400 bg-white disabled:bg-gray-200 rounded shadow-sm"
+                onBlur={e => {
+                  const num = Number(e.target.value)
+                  if (!Number.isNaN(num)) {
+                    setQuantity(num)
+                  } else {
+                    setQuantityText(String(quantity))
+                  }
+                }}
+                onChange={e => setQuantityText(e.target.value)}
+                value={quantityText}
+                id="quantity"
+                type="text"
+              />
+              <button
+                disabled={!variant?.available}
+                className="p-1 border border-gray-400 bg-white disabled:bg-gray-200 rounded shadow-sm"
+                type="button"
+                onClick={() => setQuantity(quantity + 1)}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          {!variant &&
+            <div className="inline-block px-3 py-1 rounded bg-gray-200 border border-gray-400 shadow-sm">
+              Not available
+            </div>}
+          {variant && variant.available &&
+            <AddToCartButton onClick={addLine} />}
+          {variant && !variant.available &&
+            <div className="inline-block px-3 py-1 rounded bg-gray-200 border border-gray-400 shadow-sm">
+              Sold out
+            </div>}
+          {product.descriptionHtml &&
+            <article
+              className="prose prose-sm text-gray-900"
+              dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
+            />}
+        </div>
       </div>
-    </>
+    </div>
   )
 }
 
-function AddToCartButton({ onClick, cart, onUpdate }: { onClick: () => Promise<boolean>, cart: Cart, onUpdate: (c: Cart) => void }) {
+function AddToCartButton({ onClick }: { onClick: () => Promise<boolean> }) {
   const [popup, setPopupRaw] = useState(false)
   const [wait, setWait] = useState(false)
   const [updating, setUpdating] = useState(false)
+  const { cart, updateCart } = useShop()
 
   function setPopup(open: boolean) {
     setPopupRaw(open)
@@ -238,6 +287,10 @@ function AddToCartButton({ onClick, cart, onUpdate }: { onClick: () => Promise<b
   }
 
   async function setLineQuantity(id: string, num: number) {
+    if (!cart) {
+      return
+    }
+
     setUpdating(true)
 
     const updated = await fetch('/api/updateLine', {
@@ -252,10 +305,14 @@ function AddToCartButton({ onClick, cart, onUpdate }: { onClick: () => Promise<b
 
     const json = await updated.json()
     setUpdating(false)
-    onUpdate(json)
+    updateCart(json)
   }
 
   async function removeLine(id: string) {
+    if (!cart) {
+      return
+    }
+
     setUpdating(true)
 
     const updated = await fetch('/api/removeLine', {
@@ -266,7 +323,7 @@ function AddToCartButton({ onClick, cart, onUpdate }: { onClick: () => Promise<b
 
     const json = await updated.json()
     setUpdating(false)
-    onUpdate(json)
+    updateCart(json)
   }
 
   useEffect(() => {
@@ -309,7 +366,7 @@ function AddToCartButton({ onClick, cart, onUpdate }: { onClick: () => Promise<b
           <h2 className="font-semibold text-3xl mb-3">Your cart</h2>
           <div className="flex-1 overflow-auto">
             <ul className={updating ? 'opacity-75' : ''}>
-              {cart.lineItems.map(item => (
+              {cart?.lineItems.map(item => (
                 <li key={item.id} className="mb-5">
                   <div className="flex items-center gap-x-2">
                     <div className="flex-none relative w-[3rem] border rounded aspect-square shadow-sm bg-white">
@@ -374,7 +431,7 @@ function AddToCartButton({ onClick, cart, onUpdate }: { onClick: () => Promise<b
           </div>
           <div className="border-t border-gray-300 flex gap-x-3 items-center justify-end pt-4">
             <span className="font-semibold text-gray-700 text-sm">
-              {money(cart.subtotalPrice)} Total
+              {cart && money(cart.subtotalPrice)} Total
             </span>
             <button
               onClick={() => setPopup(false)}
@@ -391,23 +448,4 @@ function AddToCartButton({ onClick, cart, onUpdate }: { onClick: () => Promise<b
       </div>
     </>
   )
-}
-
-export const getServerSideProps: GetServerSideProps<{ product: Product, cart: Cart }> = async (context) => {
-  const { id } = context.params!
-  const { checkout } = context.req.cookies
-
-  const productJob = client.product.fetchByHandle(String(id))
-  const shopJob = client.shop.fetchInfo()
-  const cartJob = client.checkout.fetch(String(checkout))
-
-  const [product, shop, cart] = await Promise.all([productJob, shopJob, cartJob])
-
-  return {
-    props: {
-      product: JSON.parse(JSON.stringify(product)),
-      shop: JSON.parse(JSON.stringify(shop)),
-      cart: JSON.parse(JSON.stringify(cart)),
-    }
-  }
 }

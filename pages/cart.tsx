@@ -1,21 +1,22 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import Image from 'next/image'
-import { client } from '@/common/shopify'
-import { GetServerSideProps } from 'next'
-import { Cart, LineItem, money } from '@/common/interfaces'
+import Nav from '@/common/Nav'
+import { useShop } from '@/common/ShopContext'
+import { money } from '@/common/interfaces'
 
-export default function CartPage({ cart: cartRaw }: { cart: Cart }) {
-  const [state, setState] = useState(() => ({
-    cart: cartRaw,
-    quantityInput: cartRaw.lineItems.map(item => String(item.quantity)),
-    updating: false,
-  }))
-  const { cart, quantityInput, updating } = state
+export default function CartPage() {
+  const { cart, updateCart } = useShop()
+  const [updating, setUpdating] = useState(false)
+  const [quantities, setQuantities] = useState<string[]>([])
 
   async function setLineQuantity(id: string, num: number) {
-    setState(s => ({ ...s, updating: true }))
+    if (!cart) {
+      return
+    }
+
+    setUpdating(true)
 
     const updated = await fetch('/api/updateLine', {
       method: 'POST',
@@ -28,23 +29,24 @@ export default function CartPage({ cart: cartRaw }: { cart: Cart }) {
     })
 
     const json = await updated.json()
-    setState({
-      updating: false,
-      cart: json,
-      quantityInput: json.lineItems.map((item: LineItem) => String(item.quantity))
-    })
+    setUpdating(false)
+    updateCart(json)
   }
 
   function setQuantityInput(index: number, text: string) {
-    setState(s => {
-      const clone = [...s.quantityInput]
+    setQuantities(q => {
+      const clone = [...q]
       clone[index] = text
-      return { ...s, quantityInput: clone }
+      return clone
     })
   }
 
   async function removeLine(id: string) {
-    setState(s => ({ ...s, updating: true }))
+    if (!cart) {
+      return
+    }
+
+    setUpdating(true)
 
     const updated = await fetch('/api/removeLine', {
       method: 'POST',
@@ -53,21 +55,30 @@ export default function CartPage({ cart: cartRaw }: { cart: Cart }) {
     })
 
     const json = await updated.json()
-    setState({
-      updating: false,
-      cart: json,
-      quantityInput: json.lineItems.map((item: LineItem) => String(item.quantity))
-    })
+    setUpdating(false)
+    updateCart(json)
   }
+
+  useEffect(() => {
+    if (cart) {
+      setQuantities(cart.lineItems.map(item => String(item.quantity)))
+    }
+
+  }, [cart])
 
   return (
     <>
       <Head>
         <title>Your Cart</title>
       </Head>
+      <Nav />
       <div className="container max-w-4xl mx-auto">
         <h1 className="font-semibold text-4xl mb-4">Your Cart</h1>
         {(() => {
+          if (!cart) {
+            return null
+          }
+
           if (cart.lineItems.length === 0) {
             return (
               <div className="border border-gray-400 shadow rounded py-[5rem] text-center bg-white">
@@ -131,7 +142,7 @@ export default function CartPage({ cart: cartRaw }: { cart: Cart }) {
                           }
                         }}
                         onChange={e => setQuantityInput(index, e.target.value)}
-                        value={quantityInput[index]}
+                        value={quantities[index] || 0}
                         id="quantity"
                         type="text"
                       />
@@ -177,16 +188,4 @@ export default function CartPage({ cart: cartRaw }: { cart: Cart }) {
       </div>
     </>
   )
-}
-
-export const getServerSideProps: GetServerSideProps<{ cart: Cart }> = async (context) => {
-  const { checkout } = context.req.cookies
-
-  const cart = await client.checkout.fetch(String(checkout))
-
-  return {
-    props: {
-      cart: JSON.parse(JSON.stringify(cart)),
-    }
-  }
 }

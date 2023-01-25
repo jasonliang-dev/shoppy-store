@@ -1,9 +1,12 @@
+import { useState, useEffect } from 'react'
 import '@/styles/globals.css'
 import Head from 'next/head'
 import Link from 'next/link'
 import { SWRConfig } from 'swr'
 import type { AppProps } from 'next/app'
 import { Inter } from '@next/font/google'
+import ShopContext from '@/common/ShopContext'
+import { Cart, Shop } from '@/common/interfaces'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -13,6 +16,34 @@ async function fetcher(resource: RequestInfo | URL, init?: RequestInit) {
 }
 
 export default function App({ Component, pageProps }: AppProps) {
+  const [shop, setShop] = useState<Shop | undefined>()
+  const [cart, setCart] = useState<Cart | undefined>()
+
+  async function getShop() {
+    const res = await fetch('/api/shop')
+    const json = await res.json()
+    setShop(json)
+  }
+
+  async function getCart() {
+    const res = await fetch('/api/cart?' + new URLSearchParams({
+      id: localStorage.getItem('checkout') || ''
+    }))
+
+    const json = await res.json()
+    updateCart(json)
+  }
+
+  function updateCart(cart: Cart) {
+    setCart(cart)
+    localStorage.setItem('checkout', cart.id)
+  }
+
+  useEffect(() => {
+    getShop()
+    getCart()
+  }, [])
+
   return (
     <>
       <Head>
@@ -23,7 +54,15 @@ export default function App({ Component, pageProps }: AppProps) {
       <div className={inter.className}>
         <div className="min-h-screen">
           <SWRConfig value={{ fetcher }}>
-            <Component {...pageProps} />
+            <ShopContext.Provider
+              value={{
+                shop,
+                cart,
+                updateCart,
+              }}
+            >
+              <Component {...pageProps} />
+            </ShopContext.Provider>
           </SWRConfig>
         </div>
         <footer className="bg-zinc-900 py-16 px-8 mt-12 flex justify-center gap-x-8">

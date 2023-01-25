@@ -1,12 +1,10 @@
-import { useState, useEffect, useRef, ReactNode, FormEvent } from 'react'
+import { useState, useEffect, useRef, ReactNode } from 'react'
 import Head from 'next/head'
-import { GetServerSideProps } from 'next'
-import { client } from '@/common/shopify'
-import { Product, Cart, Shop } from '@/common/interfaces'
+import { Product } from '@/common/interfaces'
 import Nav from '@/common/Nav'
 import ProductItem from '@/common/ProductItem'
 
-export default function CatalogPage({ shop, cart }: { shop: Shop, cart: Cart }) {
+export default function CatalogPage() {
   const [search, setSearch] = useState('')
   const [products, setProducts] = useState<Product[] | 'error' | 'loading'>('loading')
   const [sort, setSort] = useState({ key: 'TITLE', reverse: false })
@@ -56,13 +54,14 @@ export default function CatalogPage({ shop, cart }: { shop: Shop, cart: Cart }) 
   return (
     <>
       <Head>
-        <title>Products</title>
+        <title>Catalog</title>
       </Head>
-      <Nav title={shop.name} quantity={cart.lineItems.length} />
+      <Nav />
       <div className="container max-w-4xl mx-auto">
         <h1 className="font-semibold text-4xl mb-4">Products</h1>
         <div className="flex items-center mb-4">
           <form
+            className="flex items-center"
             onSubmit={e => {
               e.preventDefault()
               getProductsSort(sort.key, sort.reverse)
@@ -74,8 +73,11 @@ export default function CatalogPage({ shop, cart }: { shop: Shop, cart: Cart }) 
               onChange={e => setSearch(e.target.value)}
               value={search}
             />
-            <button className="px-3 py-2 bg-white hover:bg-gray-100 ml-2 rounded border shadow-sm border-gray-300" type="submit">
-              Search
+            <button className="flex items-center px-3 py-2 bg-white hover:bg-gray-100 ml-2 rounded border shadow-sm border-gray-300" type="submit">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-700">
+                <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
+              </svg>
+              <span className="ml-2">Search</span>
             </button>
           </form>
           <SortButton>
@@ -201,20 +203,4 @@ function SortButton({ children }: { children: ReactNode }) {
       </div>
     </div>
   )
-}
-
-export const getServerSideProps: GetServerSideProps<{ cart: Cart, shop: Shop }> = async (context) => {
-  const { checkout } = context.req.cookies
-
-  const shopJob = client.shop.fetchInfo()
-  const cartJob = client.checkout.fetch(String(checkout))
-
-  const [shop, cart] = await Promise.all([shopJob, cartJob])
-
-  return {
-    props: {
-      shop: JSON.parse(JSON.stringify(shop)),
-      cart: JSON.parse(JSON.stringify(cart)),
-    }
-  }
 }

@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
-import { GetServerSideProps } from 'next'
-import { client } from '@/common/shopify'
-import { Product, Cart, Shop } from '@/common/interfaces'
+import { Product } from '@/common/interfaces'
 import ProductItem from '@/common/ProductItem'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -10,7 +8,7 @@ import Nav from '@/common/Nav'
 import heroImage from '@/public/hero.jpg'
 import shopImage from '@/public/shop.jpg'
 
-export default function HomePage({ shop, cart }: { shop: Shop, cart: Cart }) {
+export default function HomePage() {
   const [products, setProducts] = useState<Product[] | 'error' | 'loading'>('loading')
 
   useEffect(() => {
@@ -53,7 +51,7 @@ export default function HomePage({ shop, cart }: { shop: Shop, cart: Cart }) {
       <Head>
         <title>Home</title>
       </Head>
-      <Nav title={shop.name} quantity={cart.lineItems.length} />
+      <Nav />
       <div className="container max-w-4xl mx-auto">
         <div className="h-[30rem] overflow-hidden relative rounded-lg shadow mb-8">
           <div className="absolute inset-0">
@@ -156,20 +154,4 @@ export default function HomePage({ shop, cart }: { shop: Shop, cart: Cart }) {
       </div>
     </>
   )
-}
-
-export const getServerSideProps: GetServerSideProps<{ cart: Cart, shop: Shop }> = async (context) => {
-  const { checkout } = context.req.cookies
-
-  const shopJob = client.shop.fetchInfo()
-  const cartJob = client.checkout.fetch(String(checkout))
-
-  const [shop, cart] = await Promise.all([shopJob, cartJob])
-
-  return {
-    props: {
-      shop: JSON.parse(JSON.stringify(shop)),
-      cart: JSON.parse(JSON.stringify(cart)),
-    }
-  }
 }

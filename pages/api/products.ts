@@ -9,7 +9,7 @@ type Data = any
 export default async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
   const num = Number(req.query.num) || 20
   const sort = String(req.query.sort || 'TITLE')
-  const title = String(req.query.title).replace(/([:\(\)'"])/g, '\\$1')
+  const title = String(req.query.title || '').replace(/([:\(\)'"])/g, '\\$1')
 
   const products = await client.product.fetchQuery({
     first: num,
