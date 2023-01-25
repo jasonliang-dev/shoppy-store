@@ -21,16 +21,11 @@ export default function App({ Component, pageProps }: AppProps) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div className={inter.className}>
-        <nav className="flex items-center gap-x-8 px-8 py-4 bg-gray-50 shadow border-b border-gray-300 mb-5">
-          <Link className="text-gray-900 hover:text-gray-700 hover:underline text-xl font-semibold" href="/">Cool Corner &amp; Stuff</Link>
-          <Link className="text-gray-900 hover:text-gray-700 hover:underline" href="/catalog">Catalog</Link>
-          <Link className="text-gray-900 hover:text-gray-700 hover:underline" href="/cart">Cart</Link>
-        </nav>
-        <main className="px-2 min-h-screen">
+        <div className="min-h-screen">
           <SWRConfig value={{ fetcher }}>
             <Component {...pageProps} />
           </SWRConfig>
-        </main>
+        </div>
         <footer className="bg-zinc-900 py-16 px-8 mt-12 flex justify-center gap-x-8">
           <Link className="text-gray-100 hover:text-gray-300 hover:underline" href="/">Home</Link>
           <Link className="text-gray-100 hover:text-gray-300 hover:underline" href="/catalog">Catalog</Link>

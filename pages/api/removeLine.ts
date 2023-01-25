@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { client } from '@/common/shopify'
 
-type Data = {
-  result: string
-}
+type Data = any
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
   const cart = await client.checkout.removeLineItems(req.body.checkout, [ req.body.lineItem ])

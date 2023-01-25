@@ -1,3 +1,19 @@
+export type GraphQLClient = {
+  query(set: GraphQLSelectionSet): GraphQLQuery,
+  send(query: GraphQLQuery): Promise<any>,
+}
+
+export type GraphQLQuery = {
+  toString(): string,
+}
+
+export type GraphQLSelectionSet = (builder: GraphQLSelectionSetBuilder) => void
+
+export type GraphQLSelectionSetBuilder = {
+  add(name: string, set?: GraphQLSelectionSet): void,
+  addConnection(name: string, options?: { args: any, alias: string }, set?: GraphQLSelectionSet): void,
+}
+
 export type Money = {
   amount: string,
   currencyCode: string,
@@ -60,6 +76,13 @@ export type Cart = {
   totalPrice: Money,
 }
 
-export function money(m: Money, quantity: number = 1) {
-  return `${(Number(m.amount) * quantity).toFixed(2)} ${m.currencyCode}`
+export type Shop = {
+  id: string,
+  name: string,
+  moneyFormat: string,
+}
+
+export function money(m: Money, factor: number = 1) {
+  const num = Number(m.amount) * factor
+  return `${num.toFixed(2)} ${m.currencyCode}`
 }

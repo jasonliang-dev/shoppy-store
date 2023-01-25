@@ -3,10 +3,11 @@ import { useState, useEffect } from 'react'
 import { GetServerSideProps } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
+import Nav from '@/common/Nav'
 import { client } from '@/common/shopify'
-import { Cart, Product, money } from '@/common/interfaces'
+import { Cart, Product, Shop, money } from '@/common/interfaces'
 
-export default function ProductPage({ product, cart: cartRaw }: { product: Product, cart: Cart }) {
+export default function ProductPage({ product, cart: cartRaw, shop }: { product: Product, cart: Cart, shop: Shop }) {
   const [selected, setSelected] = useState(() => {
     const obj: Record<string, string> = {}
     for (const option of product.options) {
@@ -82,6 +83,7 @@ export default function ProductPage({ product, cart: cartRaw }: { product: Produ
       <Head>
         <title>{product.title}</title>
       </Head>
+      <Nav title={shop.name} quantity={cart.lineItems.length} />
       <div className="container max-w-4xl mx-auto">
         <div className="flex items-start">
           <div className="w-[20rem] flex-none">
@@ -395,12 +397,16 @@ export const getServerSideProps: GetServerSideProps<{ product: Product, cart: Ca
   const { id } = context.params!
   const { checkout } = context.req.cookies
 
-  const product = await client.product.fetchByHandle(String(id))
-  const cart = await client.checkout.fetch(String(checkout))
+  const productJob = client.product.fetchByHandle(String(id))
+  const shopJob = client.shop.fetchInfo()
+  const cartJob = client.checkout.fetch(String(checkout))
+
+  const [product, shop, cart] = await Promise.all([productJob, shopJob, cartJob])
 
   return {
     props: {
       product: JSON.parse(JSON.stringify(product)),
+      shop: JSON.parse(JSON.stringify(shop)),
       cart: JSON.parse(JSON.stringify(cart)),
     }
   }

@@ -1,18 +1,59 @@
+import { useState, useEffect } from 'react'
 import Head from 'next/head'
+import { GetServerSideProps } from 'next'
 import { client } from '@/common/shopify'
-import { Product } from '@/common/interfaces'
+import { Product, Cart, Shop } from '@/common/interfaces'
 import ProductItem from '@/common/ProductItem'
 import Image from 'next/image'
 import Link from 'next/link'
+import Nav from '@/common/Nav'
 import heroImage from '@/public/hero.jpg'
 import shopImage from '@/public/shop.jpg'
 
-export default function HomePage({ products }: { products: Product[] }) {
+export default function HomePage({ shop, cart }: { shop: Shop, cart: Cart }) {
+  const [products, setProducts] = useState<Product[] | 'error' | 'loading'>('loading')
+
+  useEffect(() => {
+    async function getProducts() {
+      const res = await fetch('/api/products?' + new URLSearchParams({
+        num: '6',
+        sort: 'BEST_SELLING',
+      }))
+
+      const json = await res.json()
+      setProducts(json)
+    }
+
+    getProducts()
+  }, [])
+
+  let productList
+  if (products === 'loading') {
+    productList =
+      <ul className="animate-pulse grid grid-cols-3 gap-4">
+        {Array.from(Array(6)).map((_, i) => (
+          <li key={i} className="bg-white rounded-lg shadow-sm p-3 flex flex-col gap-y-3">
+            <div className="bg-gray-200 rounded aspect-square"></div>
+            <div className="bg-gray-200 rounded-full h-3"></div>
+            <div className="bg-gray-200 rounded-full w-2/3 h-3"></div>
+          </li>
+        ))}
+      </ul>
+  } else if (products === 'error') {
+    productList = []
+  } else {
+    productList =
+      <ul className="grid grid-cols-3 gap-4">
+        {products.map(product => <ProductItem key={product.id} product={product} />)}
+      </ul>
+  }
+
   return (
     <>
       <Head>
         <title>Home</title>
       </Head>
+      <Nav title={shop.name} quantity={cart.lineItems.length} />
       <div className="container max-w-4xl mx-auto">
         <div className="h-[30rem] overflow-hidden relative rounded-lg shadow mb-8">
           <div className="absolute inset-0">
@@ -51,9 +92,7 @@ export default function HomePage({ products }: { products: Product[] }) {
           </div>
         </div>
         <h2 className="font-semibold text-4xl mb-4">Products</h2>
-        <ul className="grid grid-cols-3 gap-4">
-          {products.map(product => <ProductItem key={product.id} product={product} />)}
-        </ul>
+        {productList}
         <div className="flex justify-center mt-3 mb-8">
           <Link
             className="px-4 py-1 text-lg font-semibold rounded shadow-sm bg-purple-500 hover:bg-purple-600 text-white border border-purple-800 flex items-center"
@@ -119,12 +158,18 @@ export default function HomePage({ products }: { products: Product[] }) {
   )
 }
 
-export async function getServerSideProps() {
-  const products = await client.product.fetchAll(6)
+export const getServerSideProps: GetServerSideProps<{ cart: Cart, shop: Shop }> = async (context) => {
+  const { checkout } = context.req.cookies
+
+  const shopJob = client.shop.fetchInfo()
+  const cartJob = client.checkout.fetch(String(checkout))
+
+  const [shop, cart] = await Promise.all([shopJob, cartJob])
 
   return {
     props: {
-      products: JSON.parse(JSON.stringify(products))
+      shop: JSON.parse(JSON.stringify(shop)),
+      cart: JSON.parse(JSON.stringify(cart)),
     }
   }
 }

@@ -1,44 +1,97 @@
-import { useState, useEffect, useRef, ReactNode } from 'react'
+import { useState, useEffect, useRef, ReactNode, FormEvent } from 'react'
 import Head from 'next/head'
+import { GetServerSideProps } from 'next'
 import { client } from '@/common/shopify'
-import { Product, money } from '@/common/interfaces'
+import { Product, Cart, Shop } from '@/common/interfaces'
+import Nav from '@/common/Nav'
 import ProductItem from '@/common/ProductItem'
-import Image from 'next/image'
-import Link from 'next/link'
 
-export default function CatalogPage({ products: productsRaw }: { products: Product[] }) {
+export default function CatalogPage({ shop, cart }: { shop: Shop, cart: Cart }) {
   const [search, setSearch] = useState('')
-  const [products, setProducts] = useState(productsRaw)
+  const [products, setProducts] = useState<Product[] | 'error' | 'loading'>('loading')
+  const [sort, setSort] = useState({ key: 'TITLE', reverse: false })
 
-  function sortProducts(cmp: (lhs: Product, rhs: Product) => number) {
-    const arr = [...products].sort(cmp)
-    setProducts(arr)
+  async function getProductsSort(sortKey: string, reverse: boolean) {
+    setProducts('loading')
+    setSort({ key: sortKey, reverse })
+
+    const res = await fetch('/api/products?' + new URLSearchParams({
+      num: '40',
+      title: search,
+      reverse: reverse ? 'yes' : 'no',
+      sort: sortKey,
+    }))
+
+    const json = await res.json()
+    setProducts(json)
   }
 
+  useEffect(() => {
+    getProductsSort(sort.key, sort.reverse)
+  }, [])
+
   const menuItem = 'px-4 py-1 hover:bg-gray-200 text-left flex items-center gap-x-2'
+
+  let productList
+  if (products === 'loading') {
+    productList =
+      <ul className="animate-pulse grid grid-cols-4 gap-4">
+        {Array.from(Array(12)).map((_, i) => (
+          <li key={i} className="bg-white rounded-lg shadow-sm p-3 flex flex-col gap-y-3">
+            <div className="bg-gray-200 rounded aspect-square"></div>
+            <div className="bg-gray-200 rounded-full h-3"></div>
+            <div className="bg-gray-200 rounded-full w-2/3 h-3"></div>
+          </li>
+        ))}
+      </ul>
+  } else if (products === 'error') {
+    productList = []
+  } else {
+    productList =
+      <ul className="grid grid-cols-4 gap-4">
+        {products.map(product => <ProductItem key={product.id} product={product} />)}
+      </ul>
+  }
 
   return (
     <>
       <Head>
         <title>Products</title>
       </Head>
+      <Nav title={shop.name} quantity={cart.lineItems.length} />
       <div className="container max-w-4xl mx-auto">
         <h1 className="font-semibold text-4xl mb-4">Products</h1>
         <div className="flex items-center mb-4">
-          <input
-            className="w-[20rem] bg-white border border-gray-400 shadow-sm rounded px-3 py-2"
-            type="text"
-            placeholder="Search..."
-            onChange={e => setSearch(e.target.value)}
-            value={search}
-          />
+          <form
+            onSubmit={e => {
+              e.preventDefault()
+              getProductsSort(sort.key, sort.reverse)
+            }}
+          >
+            <input
+              className="w-[20rem] bg-white border border-gray-300 shadow-sm rounded px-3 py-2"
+              type="text"
+              onChange={e => setSearch(e.target.value)}
+              value={search}
+            />
+            <button className="px-3 py-2 bg-white hover:bg-gray-100 ml-2 rounded border shadow-sm border-gray-300" type="submit">
+              Search
+            </button>
+          </form>
           <SortButton>
             <button
-              onClick={() => sortProducts((lhs, rhs) => {
-                const left = lhs.title.toLocaleLowerCase()
-                const right = rhs.title.toLocaleLowerCase()
-                return left.localeCompare(right)
-              })}
+              onClick={() => getProductsSort('BEST_SELLING', false)}
+              className={menuItem}
+              type="button"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-700">
+                <path d="M15.98 1.804a1 1 0 00-1.96 0l-.24 1.192a1 1 0 01-.784.785l-1.192.238a1 1 0 000 1.962l1.192.238a1 1 0 01.785.785l.238 1.192a1 1 0 001.962 0l.238-1.192a1 1 0 01.785-.785l1.192-.238a1 1 0 000-1.962l-1.192-.238a1 1 0 01-.785-.785l-.238-1.192zM6.949 5.684a1 1 0 00-1.898 0l-.683 2.051a1 1 0 01-.633.633l-2.051.683a1 1 0 000 1.898l2.051.684a1 1 0 01.633.632l.683 2.051a1 1 0 001.898 0l.683-2.051a1 1 0 01.633-.633l2.051-.683a1 1 0 000-1.898l-2.051-.683a1 1 0 01-.633-.633L6.95 5.684zM13.949 13.684a1 1 0 00-1.898 0l-.184.551a1 1 0 01-.632.633l-.551.183a1 1 0 000 1.898l.551.183a1 1 0 01.633.633l.183.551a1 1 0 001.898 0l.184-.551a1 1 0 01.632-.633l.551-.183a1 1 0 000-1.898l-.551-.184a1 1 0 01-.633-.632l-.183-.551z" />
+              </svg>
+              Best selling
+            </button>
+            <hr className="border-gray-200 my-1" />
+            <button
+              onClick={() => getProductsSort('TITLE', false)}
               className={menuItem}
               type="button"
             >
@@ -48,11 +101,7 @@ export default function CatalogPage({ products: productsRaw }: { products: Produ
               Name, ascending
             </button>
             <button
-              onClick={() => sortProducts((lhs, rhs) => {
-                const left = lhs.title.toLocaleLowerCase()
-                const right = rhs.title.toLocaleLowerCase()
-                return right.localeCompare(left)
-              })}
+              onClick={() => getProductsSort('TITLE', true)}
               className={menuItem}
               type="button"
             >
@@ -61,13 +110,9 @@ export default function CatalogPage({ products: productsRaw }: { products: Produ
               </svg>
               Name, descending
             </button>
-            <hr className="border-gray-300 my-1" />
+            <hr className="border-gray-200 my-1" />
             <button
-              onClick={() => sortProducts((lhs, rhs) => {
-                const left = Number(lhs.variants[0]?.price.amount || 0)
-                const right = Number(rhs.variants[0]?.price.amount || 0)
-                return left - right
-              })}
+              onClick={() => getProductsSort('PRICE', false)}
               className={menuItem}
               type="button"
             >
@@ -77,11 +122,7 @@ export default function CatalogPage({ products: productsRaw }: { products: Produ
               Price, ascending
             </button>
             <button
-              onClick={() => sortProducts((lhs, rhs) => {
-                const left = Number(lhs.variants[0]?.price.amount || 0)
-                const right = Number(rhs.variants[0]?.price.amount || 0)
-                return right - left
-              })}
+              onClick={() => getProductsSort('PRICE', true)}
               className={menuItem}
               type="button"
             >
@@ -92,15 +133,7 @@ export default function CatalogPage({ products: productsRaw }: { products: Produ
             </button>
           </SortButton>
         </div>
-        <ul className="grid grid-cols-5 gap-4">
-          {products.map(product => {
-            const trim = search.trim().toLowerCase()
-            const title = product.title.toLowerCase()
-            const show = trim.length === 0 || title.includes(trim)
-
-            return <ProductItem key={product.id} product={product} className={show ? '' : 'hidden'} />
-          })}
-        </ul>
+        {productList}
       </div>
     </>
   )
@@ -108,31 +141,49 @@ export default function CatalogPage({ products: productsRaw }: { products: Produ
 
 function SortButton({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const self = useRef<HTMLDivElement>(null)
+  const menu = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     function clickOut(e: MouseEvent) {
-      if (!ref.current || !(e.target instanceof Node)) {
+      if (!self.current || !menu.current) {
         return
       }
 
-      if (!ref.current.contains(e.target)) {
+      if (!(e.target instanceof Node)) {
+        return
+      }
+
+      if (menu.current.contains(e.target)) {
+        setOpen(false)
+        return
+      }
+
+      if (!self.current.contains(e.target)) {
+        setOpen(false)
+      }
+    }
+
+    function escape(e: KeyboardEvent) {
+      if (e.key === "Escape") {
         setOpen(false)
       }
     }
 
     document.addEventListener('click', clickOut)
+    document.addEventListener('keyup', escape)
 
     return () => {
       document.removeEventListener('click', clickOut)
+      document.removeEventListener('keyup', escape)
     }
   }, [])
 
   return (
-    <div className="ml-auto" ref={ref}>
+    <div className="ml-auto" ref={self}>
       <button
         onClick={() => setOpen(s => !s)}
-        className="px-2 py-1 bg-white hover:bg-gray-100 border border-gray-400 shadow-sm rounded flex items-center"
+        className="px-2 py-1 bg-white hover:bg-gray-100 border border-gray-300 shadow-sm rounded flex items-center"
         type="button"
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-700">
@@ -141,7 +192,10 @@ function SortButton({ children }: { children: ReactNode }) {
         <span className="ml-2">Sort by...</span>
       </button>
       <div className={`${open ? '' : 'hidden'} relative`}>
-        <div className="absolute overflow-hidden z-[999] top-0 right-0 bg-white shadow-lg rounded-lg border border-gray-400 flex flex-col py-2 mt-2 w-[15rem]">
+        <div
+          ref={menu}
+          className="absolute overflow-hidden z-[999] top-0 right-0 bg-white shadow-lg rounded-lg border border-gray-300 flex flex-col py-2 mt-2 w-[15rem]"
+        >
           {children}
         </div>
       </div>
@@ -149,12 +203,18 @@ function SortButton({ children }: { children: ReactNode }) {
   )
 }
 
-export async function getServerSideProps() {
-  const products = await client.product.fetchAll(50)
+export const getServerSideProps: GetServerSideProps<{ cart: Cart, shop: Shop }> = async (context) => {
+  const { checkout } = context.req.cookies
+
+  const shopJob = client.shop.fetchInfo()
+  const cartJob = client.checkout.fetch(String(checkout))
+
+  const [shop, cart] = await Promise.all([shopJob, cartJob])
 
   return {
     props: {
-      products: JSON.parse(JSON.stringify(products))
+      shop: JSON.parse(JSON.stringify(shop)),
+      cart: JSON.parse(JSON.stringify(cart)),
     }
   }
 }
