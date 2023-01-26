@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import { Product } from '@/common/interfaces'
-import ProductItem from '@/common/ProductItem'
+import ProductItem, { ProductSkeleton } from '@/common/ProductItem'
 import Image from 'next/image'
 import Link from 'next/link'
 import heroImage from '@/public/hero.jpg'
@@ -29,13 +29,7 @@ export default function HomePage() {
   if (products === 'loading') {
     productList =
       <ul className="animate-pulse grid grid-cols-3 gap-4">
-        {Array.from(Array(6)).map((_, i) => (
-          <li key={i} className="bg-white rounded-lg shadow-sm p-3 flex flex-col gap-y-3">
-            <div className="bg-gray-200 rounded aspect-square"></div>
-            <div className="bg-gray-200 rounded-full h-3"></div>
-            <div className="bg-gray-200 rounded-full w-2/3 h-3"></div>
-          </li>
-        ))}
+        {Array.from(Array(6)).map((_, i) => <ProductSkeleton key={i} />)}
       </ul>
   } else if (products === 'error') {
     productList = null

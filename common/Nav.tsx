@@ -4,7 +4,7 @@ import { useShop } from '@/common/ShopContext'
 export default function Nav() {
   const { shop, cart, setOverlay } = useShop()
 
-  const link = 'text-gray-900 hover:text-gray-700 hover:underline '
+  const link = 'text-gray-900 hover:text-gray-700 hover:underline text-sm font-semibold '
 
   let count = 0
   if (cart) {
@@ -13,8 +13,9 @@ export default function Nav() {
     }
   }
 
+
   return (
-    <nav className="flex items-center gap-x-8 px-8 py-4 bg-gray-50 shadow border-b border-gray-300 mb-5">
+    <nav className="flex items-center gap-x-8 px-8 py-4 bg-white border-b border-gray-300 mb-5">
       {shop?.name
         ? <Link className={`${link} text-xl font-semibold`} href="/">{shop.name}</Link>
         : <Link className={link} href="/">Home</Link>}

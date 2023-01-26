@@ -8,7 +8,7 @@ export const ShopContext = createContext<{
   overlay: boolean,
   setOverlay: (open: boolean) => void,
   updateCart: (c: Cart) => void,
-  moneyFormat: (money: Money, factor?: number) => string,
+  moneyFormat: (money: Money | null, factor?: number) => string,
 }>({
   shop: null,
   cart: null,

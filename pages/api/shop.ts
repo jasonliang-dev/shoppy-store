@@ -10,6 +10,7 @@ export default async function handler(_: NextApiRequest, res: NextApiResponse<Da
       shop {
         id
         name
+        moneyFormat
       }
       collections(first: 250) {
         edges {

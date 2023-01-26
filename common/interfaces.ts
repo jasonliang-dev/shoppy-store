@@ -22,7 +22,7 @@ export type Money = {
 export type ProductImage = {
   id: string,
   src: string,
-  altText?: string,
+  altText: string | null,
   width: number,
   height: number,
 }
@@ -31,8 +31,8 @@ export type ProductVariant = {
   id: string,
   available: boolean,
   title: string,
-  image: ProductImage,
-  compareAtPrice: Money,
+  image: ProductImage | null,
+  compareAtPrice: Money | null,
   price: Money,
   product: {
     id: string,
@@ -44,8 +44,8 @@ export type Collection = {
   id: string,
   handle: string,
   title: string,
-  description?: string,
-  descriptionHtml?: string,
+  description: string | null,
+  descriptionHtml: string | null,
 }
 
 export type Product = {
@@ -53,8 +53,8 @@ export type Product = {
   availableForSale: boolean,
   handle: string,
   title: string,
-  description?: string,
-  descriptionHtml?: string,
+  description: string | null,
+  descriptionHtml: string | null,
   options: {
     id: string,
     name: string,
@@ -89,3 +89,13 @@ export type Shop = {
   name: string,
   moneyFormat: string,
 }
+
+export function imgSrcOr(image: ProductImage | null, fallback: string) {
+  if (!image) {
+    return fallback
+  }
+
+  return image.src.split('?')[0]
+}
+
+

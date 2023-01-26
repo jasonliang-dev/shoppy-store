@@ -1,7 +1,6 @@
 import Head from 'next/head'
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
-import { Product } from '@/common/interfaces'
+import { imgSrcOr, Product, ProductImage } from '@/common/interfaces'
 import { useShop } from '@/common/ShopContext'
 import { useRouter } from 'next/router'
 
@@ -27,7 +26,7 @@ export default function ProductPage() {
 
 function ProductSkeleton() {
   return (
-    <div className="container max-w-4xl mx-auto">
+    <div className="container max-w-5xl mx-auto">
       <Head>
         <title>Product</title>
       </Head>
@@ -58,7 +57,7 @@ function ProductDetails({ product }: { product: Product }) {
   })
   const [quantity, setQuantityRaw] = useState(1)
   const [quantityText, setQuantityText] = useState(String(quantity))
-  const [image, setImage] = useState(product.images[0])
+  const [image, setImage] = useState<ProductImage | null>(product.images[0])
   const [adding, setAdding] = useState(false)
   const { cart, updateCart, setOverlay, moneyFormat } = useShop()
 
@@ -104,71 +103,61 @@ function ProductDetails({ product }: { product: Product }) {
 
   let price
   if (!variant) {
-    price = null
-  } else if (Number(variant.compareAtPrice?.amount) > Number(variant.price.amount)) {
+    price = <span>&nsbp;</span>
+  } else if (
+    variant.compareAtPrice
+    && Number(variant.compareAtPrice?.amount) > Number(variant.price.amount)
+  ) {
     price =
-      <>
-        <div className="text-gray-700 text-xs line-through">
+      <div className="flex items-center">
+        <div className="text-gray-700 text-sm line-through">
           {moneyFormat(variant.compareAtPrice)}
         </div>
-        <div className="text-red-700">
+        <div className="text-red-700 ml-2">
           {moneyFormat(variant.price)}
         </div>
-      </>
+      </div>
   } else {
     price =
-      <div className="text-gray-700">
+      <div className="">
         {moneyFormat(variant.price)}
       </div>
   }
 
   return (
-    <div className="container max-w-4xl mx-auto">
+    <div className="container max-w-5xl mx-auto">
       <Head>
         <title>{product.title}</title>
       </Head>
       <div className="flex items-start">
         <div className="w-[30rem] flex-none">
-          <div className="relative w-full aspect-square mb-3">
-            <Image
-              fill
-              src={image?.src || '/600.svg'}
-              alt={image?.altText || ''}
-              className="object-contain rounded-lg"
-              sizes="640px"
-            />
-          </div>
+          <img
+            className="w-full aspect-square mb-3 rounded-lg object-contain"
+            src={imgSrcOr(image, '/600.svg') + '?width=640'}
+            alt={image?.altText || ''}
+            sizes="640px"
+          />
           <div className="grid grid-cols-4 gap-2">
-            {product.images.map(img => (
-              <div
+            {product.images.map(img =>
+              <img
                 key={img.id}
                 onClick={() => setImage(img)}
-                className="relative cursor-pointer w-full aspect-square rounded overflow-hidden border border-gray-400 bg-white"
-              >
-                <Image
-                  fill
-                  src={img.src || '/600.svg'}
-                  alt={img.altText || ''}
-                  className="object-cover"
-                  sizes="120px"
-                />
-              </div>
-            ))}
+                className="cursor-pointer w-full aspect-square rounded border border-gray-400 bg-white object-cover"
+                src={imgSrcOr(img, '/600.svg') + '?width=640'}
+                alt={img?.altText || ''}
+                sizes="120px"
+              />
+            )}
           </div>
         </div>
         <div className="ml-8">
-          <h2 className="text-3xl font-semibold">{product.title}</h2>
-          <div className="flex gap-x-2 items-center">
+          <h2 className="text-3xl font-semibold mb-2">{product.title}</h2>
+          <div className="flex gap-x-2 items-center text-2xl">
             {price}
-            {variant && !variant.available &&
-              <div className="rounded-full px-2 text-xs font-semibold bg-gray-300 text-gray-700">
-                Out of stock
-              </div>}
-            &nbsp;
           </div>
           {product.options.map(option => (
             <div key={option.id} className="mb-3 mt-2">
-              <span className="font-semibold text-sm text-gray-800 mb-1">
+              <span className="block font-semibold text-sm text-gray-800 mb-1">
                 {option.name}
               </span>
               <div className="flex flex-wrap gap-2">
@@ -176,7 +165,7 @@ function ProductDetails({ product }: { product: Product }) {
                   <button
                     key={value}
                     className={
-                      'px-2 py-1 border rounded min-w-[3rem] '
+                      'px-5 py-2 border rounded '
                       + (selected[option.id] === value
                         ? 'bg-gray-900 hover:bg-black border-gray-900 text-gray-50'
                         : 'bg-white hover:bg-gray-100 border-gray-300')}
@@ -190,7 +179,10 @@ function ProductDetails({ product }: { product: Product }) {
             </div>
           ))}
           <div className="mb-3 mt-2">
-            <label className="font-semibold text-sm text-gray-800 mb-1" htmlFor="quantity">
+            <label
+              className="block font-semibold text-sm text-gray-800 mb-1"
+              htmlFor="quantity"
+            >
               Quantity
             </label>
             <div className="flex gap-x-2">
