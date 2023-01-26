@@ -27,6 +27,8 @@ export type ProductImage = {
   height: number,
 }
 
+export type CollectionImage = ProductImage
+
 export type ProductVariant = {
   id: string,
   available: boolean,
@@ -46,6 +48,7 @@ export type Collection = {
   title: string,
   description: string | null,
   descriptionHtml: string | null,
+  image: CollectionImage | null,
 }
 
 export type Product = {

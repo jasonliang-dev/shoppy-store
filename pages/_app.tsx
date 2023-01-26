@@ -15,11 +15,19 @@ const inter = Inter({ subsets: ['latin'] })
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter()
-  const [shop, setShop] = useState<Shop | null>(null)
   const [cart, setCart] = useState<Cart | null>(null)
-  const [collections, setCollections] = useState<Collection[]>([])
   const [overlay, setOverlayRaw] = useState(false)
-  const [transitioning, setTransitioning] = useState(true)
+  const [group, setGroup] = useState<{
+    shop: Shop | null,
+    collections: Collection[],
+    homepage: Collection | null,
+    waitingFirstLoad: boolean
+  }>({
+    shop: null,
+    collections: [],
+    homepage: null,
+    waitingFirstLoad: true,
+  })
 
   function setOverlay(open: boolean) {
     setOverlayRaw(open)
@@ -34,9 +42,23 @@ export default function App({ Component, pageProps }: AppProps) {
     async function getShop() {
       const res = await fetch('/api/shop')
       const json = await res.json()
-      setShop(json.shop)
-      setCollections(json.collections || [])
-      setTransitioning(false)
+
+      const collections = []
+      let homepage = null
+      for (const collection of json.collections) {
+        if (collection.handle === 'homepage') {
+          homepage = collection
+        } else {
+          collections.push(collection)
+        }
+      }
+
+      setGroup({
+        shop: json.shop,
+        waitingFirstLoad: false,
+        collections,
+        homepage,
+      })
     }
 
     async function getCart() {
@@ -75,14 +97,15 @@ export default function App({ Component, pageProps }: AppProps) {
 
     const num = (Number(m.amount) * factor).toLocaleString('en-US', { minimumFractionDigits: 2 })
 
-    if (shop?.moneyFormat) {
-      return shop.moneyFormat.replace("{{amount}}", num)
+    if (group.shop?.moneyFormat) {
+      return group.shop.moneyFormat.replace("{{amount}}", num)
     } else {
       return `${num} ${m.currencyCode}`
     }
   }
 
-  const link = 'text-gray-100 hover:text-gray-300 hover:underline'
+  const label = 'font-black text-gray-800 text-lg'
+  const link = 'text-gray-700 hover:text-gray-800 hover:underline text-sm font-semibold'
 
   return (
     <>
@@ -93,9 +116,10 @@ export default function App({ Component, pageProps }: AppProps) {
       </Head>
       <ShopContext.Provider
         value={{
-          shop,
+          shop: group.shop,
+          collections: group.collections,
+          homepage: group.homepage,
           cart,
-          collections,
           overlay,
           setOverlay,
           updateCart,
@@ -104,23 +128,44 @@ export default function App({ Component, pageProps }: AppProps) {
       >
         <div className={inter.className}>
           <Transition
-            show={transitioning}
-            className="fixed z-[9999] z-10 bg-gray-200 inset-0"
+            show={group.waitingFirstLoad}
+            className="fixed z-[9999] z-10 bg-gray-200 inset-0 p-8 flex items-end justify-end"
             enter="transition ease-in-out duration-500 transform"
             enterFrom="-translate-x-full opacity-0"
             enterTo="translate-x-0 opacity-100"
             leave="transition ease-in-out duration-500 transform"
             leaveFrom="translate-x-0 opacity-100"
             leaveTo="translate-x-full opacity-0"
-          />
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 animate-spin text-gray-600">
+              <path fillRule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H3.989a.75.75 0 00-.75.75v4.242a.75.75 0 001.5 0v-2.43l.31.31a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39zm1.23-3.723a.75.75 0 00.219-.53V2.929a.75.75 0 00-1.5 0V5.36l-.31-.31A7 7 0 003.239 8.188a.75.75 0 101.448.389A5.5 5.5 0 0113.89 6.11l.311.31h-2.432a.75.75 0 000 1.5h4.243a.75.75 0 00.53-.219z" clipRule="evenodd" />
+            </svg>
+            <span className="text-gray-800 ml-2 font-semibold">
+              Loading...
+            </span>
+          </Transition>
           <div className="min-h-screen">
             <Nav />
             <Component {...pageProps} />
           </div>
-          <footer className="bg-zinc-900 py-16 px-8 mt-12 flex justify-center gap-x-8">
-            <Link className={link} href="/">Home</Link>
-            <Link className={link} href="/catalog">Catalog</Link>
-            <Link className={link} href="/cart">Cart</Link>
+          <footer className="bg-gray-200 py-12 px-10 mt-12 flex gap-x-24 border-t border-gray-300">
+            <div className="flex flex-col gap-y-3">
+              <span className={label}>Pages</span>
+              <Link className={link} href="/">Home</Link>
+              <Link className={link} href="/catalog">Catalog</Link>
+              <Link className={link} href="/cart">Cart</Link>
+            </div>
+            <div className="grid grid-cols-3 gap-y-3 gap-x-8">
+              <span className={`${label} col-span-3`}>Collections</span>
+              {group.collections.map(collection =>
+                <Link className={link} href={`/catalog/${collection.handle}`}>
+                  {collection.title}
+                </Link>)}
+            </div>
+            <div className="flex flex-col gap-y-3">
+              <span className={label}>More</span>
+              <Link className={link} href="https://github.com/jasonliang-dev/shoppy-store">Source code on GitHub</Link>
+            </div>
           </footer>
           <CartOverlay open={overlay} setOpen={setOverlay} moneyFormat={moneyFormat} />
         </div>
@@ -170,7 +215,7 @@ function CartOverlay({
               leaveTo="translate-x-full opacity-0"
             >
               <div className="bg-white rounded-lg shadow-lg border border-gray-300 flex flex-col sm:w-[30rem] h-full">
-                <h2 className="font-semibold text-3xl mb-3 pt-4 px-4">Your cart</h2>
+                <h2 className="font-black text-3xl mb-3 pt-4 px-4">Your cart</h2>
                 <div className="flex-1 overflow-auto">
                   <ul className={`${updating ? 'opacity-75' : ''} flex flex-col gap-y-8`}>
                     {cart?.lineItems.map((item, index) => (
@@ -236,7 +281,7 @@ function CartOverlay({
                   <Link
                     onClick={() => setOpen(false)}
                     href="/cart"
-                    className="@btn-purple px-2 py-1"
+                    className="@btn-purple px-2 py-1 font-semibold"
                   >
                     View cart
                   </Link>

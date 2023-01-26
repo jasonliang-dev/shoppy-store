@@ -13,8 +13,30 @@
    focus:ring-purple-500 focus:ring-1;
 }
 
+.\@btn-zinc {
+  @apply rounded shadow-sm bg-zinc-900 hover:bg-black text-white
+   focus:outline-none focus:border-purple-500 focus:ring-purple-500
+   focus:ring-1;
+}
+
 .\@control {
   @apply bg-white border shadow-sm border-gray-300 focus:outline-none
    focus:border-purple-500 focus:ring-purple-500 block rounded
    focus:ring-1;
+}
+
+@keyframes slide-up {
+  from {
+    transform: translate3d(0, 4rem, 0);
+    opacity: 0;
+  }
+
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+.\@slide-up {
+  animation-name: slide-up;
 }

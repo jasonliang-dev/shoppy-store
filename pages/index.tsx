@@ -1,19 +1,20 @@
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
-import { Product } from '@/common/interfaces'
+import { imgSrcOr, Product } from '@/common/interfaces'
 import ProductItem, { ProductSkeleton } from '@/common/ProductItem'
-import Image from 'next/image'
 import Link from 'next/link'
-import heroImage from '@/public/hero.jpg'
-import shopImage from '@/public/shop.jpg'
+import { useShop } from '@/common/ShopContext'
 
 export default function HomePage() {
   const [products, setProducts] = useState<Product[] | 'error' | 'loading'>('loading')
+  const { collections, homepage } = useShop()
+
+  const featuredCollections = collections.filter(collection => collection.image)
 
   useEffect(() => {
     async function getProducts() {
       const res = await fetch('/api/products?' + new URLSearchParams({
-        num: '6',
+        num: '8',
         sort: 'BEST_SELLING',
         collection: 'homepage',
       }))
@@ -25,97 +26,77 @@ export default function HomePage() {
     getProducts()
   }, [])
 
-  let productList
-  if (products === 'loading') {
-    productList =
-      <ul className="animate-pulse grid grid-cols-3 gap-4">
-        {Array.from(Array(6)).map((_, i) => <ProductSkeleton key={i} />)}
-      </ul>
-  } else if (products === 'error') {
-    productList = null
-  } else {
-    productList =
-      <ul className="grid grid-cols-3 gap-4">
-        {products.map(product => <ProductItem key={product.id} product={product} />)}
-      </ul>
-  }
-
   return (
-    <div className="container max-w-4xl mx-auto">
+    <div>
       <Head>
         <title>Home</title>
       </Head>
-      <div className="h-[30rem] overflow-hidden relative rounded-lg shadow mb-8">
-        <div className="absolute inset-0">
-          <Image
-            className="brightness-[.25] z-10 w-full h-full object-cover"
-            src={heroImage}
-            alt=""
-          />
-        </div>
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
-          <h1 className="font-semibold text-4xl mb-1">
-            Welcome to Cool Corner &amp; Stuff
+      <div className="relative h-[40rem]">
+        <img
+          className="z-10 absolute inset-0 w-full h-full object-cover brightness-[.5]"
+          src={homepage?.image?.src || ''}
+          alt=""
+          sizes="100vw"
+        />
+        <div className="relative z-20 flex flex-col items-center justify-center h-full">
+          <h1 className="font-black text-6xl mb-4 text-white max-w-4xl text-center">
+            The best snow gear for tumbing down mountains
           </h1>
-          <p className="text-gray-200 text-lg mb-4">
-            That one secret store that only the cool people know about
-          </p>
           <Link
-            className="px-3 py-1 font-semibold rounded shadow-sm text-white bg-black flex items-center"
+            className="px-4 py-2 font-semibold rounded shadow flex items-center @btn-zinc"
             href="/catalog"
           >
-            <span className="mr-2">View catalog</span>
+            <span className="mr-2">View products</span>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
               <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3" />
             </svg>
           </Link>
-          <p className="text-gray-300 text-sm mt-4">
-            Photo by{' '}
-            <Link className="text-purple-400 underline" href="https://unsplash.com/@randomlies?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">
-              Ashim D’Silva
-            </Link>
-            {' '}on{' '}
-            <Link className="text-purple-400 underline" href="https://unsplash.com/photos/ZmgJiztRHXE?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">
-              Unsplash
-            </Link>
-          </p>
         </div>
       </div>
-      <h2 className="font-semibold text-4xl mb-4">Products</h2>
-      {productList}
-      <div className="flex justify-center mt-8 mb-8">
-        <Link
-          className="px-4 py-1 text-lg font-semibold @btn-purple flex items-center"
-          href="/catalog"
-        >
-          <span className="mr-2">Show all products</span>
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3" />
-          </svg>
-        </Link>
-      </div>
-      <h2 className="font-semibold text-4xl mb-4">About</h2>
-      <div className="flex">
-        <div className="w-[50rem]">
-          <figure>
-            <Image
-              className="rounded aspect-video"
-              src={shopImage}
-              alt="A bright clothes shop"
-            />
-            <figcaption className="text-gray-700 text-sm mt-2">
-              Photo by{' '}
-              <Link className="text-purple-700 underline" href="https://unsplash.com/@korie?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">
-                Korie Cull
+      <div className="container max-w-5xl mx-auto px-2 -mt-[8rem]">
+        <div className="flex flex-wrap justify-center">
+          {featuredCollections.map(collection =>
+            <div key={collection.id} className="w-1/3 p-3">
+              <Link
+                href={`/catalog/${collection.handle}`}
+                className="group rounded-lg shadow-lg overflow-hidden relative p-4 flex flex-col justify-end h-[25rem]"
+              >
+                <img
+                  className="z-10 absolute w-full h-full object-cover inset-0 object-cover transition transform group-hover:scale-105"
+                  src={imgSrcOr(collection.image, '') + '?width=630'}
+                  alt={collection.image?.altText || ''}
+                  sizes="630px"
+                />
+                <div className="z-20 absolute bg-gradient-to-t from-gray-900 to-transparent inset-0 opacity-75" />
+                <div className="z-30 relative leading-tight">
+                  <span className="text-gray-300 text-xs">Collection</span>
+                  <h2 className="text-white font-semibold">
+                    {collection.title}
+                  </h2>
+                </div>
               </Link>
-              {' '}on{' '}
-              <Link className="text-purple-700 underline" href="https://unsplash.com/photos/IzIME1jwjCY?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">
-                Unsplash
-              </Link>
-            </figcaption>
-          </figure>
+            </div>)}
         </div>
-        <article className="ml-4 prose">
+        <div className="flex justify-between items-baseline mt-12 mb-4">
+          <h2 className="font-black text-2xl">
+            Featured Products
+          </h2>
+          <Link href="/catalog" className="text-purple-600 hover:text-purple-700 hover:underline">
+            Shop all products
+          </Link>
+        </div>
+        <div className="grid grid-cols-4 gap-4">
+          {typeof products !== 'string' && products.map(product =>
+            <ProductItem key={product.id} product={product} />)}
+        </div>
+        {products === 'loading' &&
+          <ul className="animate-pulse grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {Array.from(Array(6)).map((_, i) => <ProductSkeleton key={i} />)}
+          </ul>}
+      </div>
+      <div className="py-20 bg-zinc-800 mt-8">
+        <article className="mx-auto prose prose-invert">
+          <h2 className="font-black">About</h2>
           <p>
             This isn&#39;t an actual store. Sorry to burst your bubble. This is
             a custom storefront using a bit of TypeScript and some well known
@@ -127,22 +108,23 @@ export default function HomePage() {
             <li>Tailwind CSS, for styling this website</li>
           </ul>
           <p>
-            I think it&#39;s kinda neat that this can be put together with
-            not much code (at least on my end).
+            I think it&#39;s kinda neat that this can be put together pretty
+            easily with not much code.
           </p>
-          <div className="not-prose">
-            <Link
-              className="@btn-purple px-3 py-1 inline-flex items-center"
-              href="/catalog"
-            >
-              <span className="mr-2">See catalog</span>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3" />
-              </svg>
-            </Link>
-          </div>
         </article>
       </div>
+      <article className="mx-auto prose py-12 mt-8">
+        <h2 className="font-black">Image Credit</h2>
+        <p>Thank you Unsplash for providing free photos and for existing.</p>
+        <ul>
+          <li>Homepage Image: by <a href="https://unsplash.com/@maarten_jpg?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Maarten Duineveld</a> on <a href="https://unsplash.com/photos/2QNDSPCSzCI?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a></li>
+          <li>Ski: by <a href="https://unsplash.com/@mattpunsplash?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Matthieu Pétiard</a> on <a href="https://unsplash.com/photos/Pf6e3o0GL4M?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a></li>
+          <li>Snowboard: by <a href="https://unsplash.com/@danedeaner?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Dane Deaner</a> on <a href="https://unsplash.com/photos/j5asemKMmQY?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a></li>
+          <li>Beanie: by <a href="https://unsplash.com/es/@karsten116?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Karsten Winegeart</a> on <a href="https://unsplash.com/photos/4QfPff4QwwI?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a></li>
+          <li>Helmet: by <a href="https://unsplash.com/@stevejjohnston?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Steve Johnston</a> on <a href="https://unsplash.com/photos/-l4HKil0o1g?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a></li>
+          <li>Goggles: by <a href="https://unsplash.com/@danny_lincoln?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Daniel Lincoln</a> on <a href="https://unsplash.com/photos/UNGYOAr0w5k?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a></li>
+        </ul>
+      </article>
     </div>
   )
 }

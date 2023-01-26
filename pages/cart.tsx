@@ -8,11 +8,11 @@ export default function CartPage() {
   const { moneyFormat } = useShop()
 
   return (
-    <div className="container max-w-4xl mx-auto">
+    <div className="container max-w-4xl mx-auto mt-8">
       <Head>
         <title>Your Cart</title>
       </Head>
-      <h1 className="font-semibold text-4xl mb-4">Your Cart</h1>
+      <h1 className="font-black text-4xl mb-4">Your Cart</h1>
       <CartBehavior>
         {({
           cart,
@@ -116,7 +116,7 @@ export default function CartPage() {
                   </span>
                 </div>
                 <span className="text-gray-700 mb-3">Shipping and tax calculated at checkout</span>
-                <a className="px-3 py-2 bg-black text-white inline-block rounded" href={cart.webUrl}>
+                <a className="px-3 py-2 font-semibold inline-block @btn-zinc" href={cart.webUrl}>
                   Proceed to checkout
                 </a>
               </div>

@@ -10,7 +10,13 @@ import { useRouter } from 'next/router'
 export default function CatalogPage() {
   const router = useRouter()
   const [search, setSearch] = useState('')
-  const [products, setProducts] = useState<Product[] | 'error' | 'loading'>('loading')
+  const [products, setProducts] = useState<{
+    list: Product[],
+    stat: 'loaded' | 'loading' | 'error',
+  }>({
+    list: [],
+    stat: 'loading',
+  })
   const [sort, setSort] = useState({ key: 'TITLE', reverse: false })
   const { collections } = useShop()
 
@@ -18,7 +24,7 @@ export default function CatalogPage() {
   const collection = collections.find(col => col.handle === handle)
 
   async function refreshProducts(sort: { key: string, reverse: boolean }) {
-    setProducts('loading')
+    setProducts(p => ({ ...p, stat: 'loading' }))
     setSort(sort)
 
     const num = '40'
@@ -30,7 +36,7 @@ export default function CatalogPage() {
         num,
       }))
       const json = await res.json()
-      setProducts(json)
+      setProducts({ list: json, stat: 'loaded' })
     } else {
       const res = await fetch('/api/products?' + new URLSearchParams({
         title: search,
@@ -40,7 +46,7 @@ export default function CatalogPage() {
       }))
 
       const json = await res.json()
-      setProducts(json)
+      setProducts({ list: json, stat: 'loaded' })
     }
   }
 
@@ -55,27 +61,13 @@ export default function CatalogPage() {
     refreshProducts({ key: 'TITLE', reverse: false })
   }, [])
 
-  let productList
-  if (products === 'loading') {
-    productList =
-      <ul className="animate-pulse grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-        {Array.from(Array(12)).map((_, i) => <ProductSkeleton key={i} />)}
-      </ul>
-  } else if (products === 'error') {
-    productList = null
-  } else {
-    productList =
-      <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-        {products.map(product => <ProductItem key={product.id} product={product} />)}
-      </ul>
-  }
-
   return (
-    <div className="container mx-auto px-2">
+    <div className="container mx-auto px-2 mt-8">
       <Head>
         <title>Catalog</title>
       </Head>
-      <h1 className="font-semibold text-4xl mb-4">
+      <span className="font-semibold text-gray-700 text-sm">Collection</span>
+      <h1 className="font-black text-4xl mb-4">
         {collection ? collection.title : 'All Products'}
       </h1>
       <div className="flex">
@@ -91,7 +83,7 @@ export default function CatalogPage() {
               }
             }}
           >
-            <label htmlFor="search" className="block font-semibold text-sm text-gray-800 mb-1">
+            <label htmlFor="search" className="block font-bold text-sm text-gray-700 mb-1">
               Search
             </label>
             <div className="flex items-stretch">
@@ -109,7 +101,7 @@ export default function CatalogPage() {
               </button>
             </div>
           </form>
-          <span className="flex justify-between items-baseline font-semibold text-sm text-gray-800 mb-2">
+          <span className="flex justify-between items-baseline font-bold text-sm text-gray-700 mb-2">
             Collections
             {collection &&
               <Link
@@ -190,7 +182,21 @@ export default function CatalogPage() {
               ]}
             />
           </div>
-          {productList}
+          {products.stat === 'loaded' &&
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {products.list.map((product, index) =>
+                <div
+                  key={product.id}
+                  className="@slide-up"
+                  style={{ animationDuration: `${Math.floor(Math.sqrt(index + 1) * 150)}ms` }}
+                >
+                  <ProductItem product={product} />
+                </div>)}
+            </div>}
+          {products.stat === 'loading' &&
+            <ul className="animate-pulse grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {Array.from(Array(12)).map((_, i) => <ProductSkeleton key={i} />)}
+            </ul>}
         </div>
       </div>
     </div>

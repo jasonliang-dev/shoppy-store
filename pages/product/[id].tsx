@@ -26,7 +26,7 @@ export default function ProductPage() {
 
 function ProductSkeleton() {
   return (
-    <div className="container max-w-5xl mx-auto">
+    <div className="container max-w-5xl mx-auto mt-8">
       <Head>
         <title>Product</title>
       </Head>
@@ -125,7 +125,7 @@ function ProductDetails({ product }: { product: Product }) {
   }
 
   return (
-    <div className="container max-w-5xl mx-auto">
+    <div className="container max-w-5xl mx-auto mt-8">
       <Head>
         <title>{product.title}</title>
       </Head>
@@ -151,7 +151,7 @@ function ProductDetails({ product }: { product: Product }) {
           </div>
         </div>
         <div className="ml-8">
-          <h2 className="text-3xl font-semibold mb-2">{product.title}</h2>
+          <h2 className="text-3xl font-black mb-2">{product.title}</h2>
           <div className="flex gap-x-2 items-center text-2xl">
             {price}
           </div>
@@ -167,7 +167,7 @@ function ProductDetails({ product }: { product: Product }) {
                     className={
                       'px-5 py-2 border rounded '
                       + (selected[option.id] === value
-                        ? 'bg-gray-900 hover:bg-black border-gray-900 text-gray-50'
+                        ? 'bg-zinc-900 hover:bg-black border-gray-900 text-white'
                         : 'bg-white hover:bg-gray-100 border-gray-300')}
                     onClick={() => setSelected(s => ({ ...s, [option.id]: value }))}
                     type="button"

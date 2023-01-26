@@ -15,11 +15,11 @@ export default function Nav() {
 
 
   return (
-    <nav className="flex items-center gap-x-8 px-8 py-4 bg-white border-b border-gray-300 mb-5">
+    <nav className="flex items-center gap-x-8 px-8 py-4 bg-white border-b border-gray-300">
       {shop?.name
         ? <Link className={`${link} text-xl font-semibold`} href="/">{shop.name}</Link>
         : <Link className={link} href="/">Home</Link>}
-      <Link className={link} href="/catalog">Catalog</Link>
+      <Link className={link} href="/catalog">Products</Link>
       <button
         className="ml-auto text-gray-900 hover:text-gray-700 flex items-center"
         onClick={() => setOverlay(true)}

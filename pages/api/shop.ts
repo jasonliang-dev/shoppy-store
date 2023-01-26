@@ -19,15 +19,20 @@ export default async function handler(_: NextApiRequest, res: NextApiResponse<Da
             title
             descriptionHtml
             handle
+            image {
+              id
+              src: url
+              altText
+              width
+              height
+            }
           }
         }
       }
     }
   `)
 
-  const collections = data.collections.edges
-    .filter(({ node }: { node: Collection }) => node.handle !== 'homepage')
-    .map(({ node }: { node: Collection }) => node)
+  const collections = data.collections.edges.map(({ node }: { node: Collection }) => node)
 
   res.status(200).json({
     collections,

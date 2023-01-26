@@ -38,55 +38,59 @@ export default function ProductItem({ product, className }: { product: Product, 
   }
 
   const shouldTransition = image?.src !== hotImage?.src
-  const img = `z-20 w-full h-full absolute object-contain rounded ${shouldTransition ? 'transition-opacity' : ''}`
+  const img = `z-20 w-full h-full absolute object-contain rounded transition transform ${shouldTransition ? 'transition-opacity' : ''} ${hot ? 'scale-100' : 'scale-[.975]'} `
 
   return (
-    <li
-      className={`${className} h-full`}
+    <div
+      className={`${className} h-full mb-4`}
       onMouseEnter={() => setHot(true)}
       onMouseLeave={() => setHot(false)}
     >
       <Link
-        className="flex flex-col h-full bg-white rounded-lg shadow-sm p-3 border border-gray-300"
+        className="flex flex-col h-full"
         href={"/product/" + product.handle}
       >
-        <div className={`relative w-full aspect-square rounded transition transform ${hot ? 'scale-100' : 'scale-[.975]'}`}>
-          <img
-            className={`${img} ${(shouldTransition && hot) ? 'opacity-0' : 'opacity-1'}`}
-            src={imgSrcOr(image, '/600.svg') + '?width=510'}
-            alt={image?.altText || product.title}
-            sizes="510px"
-          />
-          {shouldTransition &&
+        <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-300">
+          <div className={`relative w-full aspect-square rounded `}>
             <img
-              className={`${img} ${(hot) ? 'opacity-1' : 'opacity-0'}`}
-              src={imgSrcOr(hotImage, '/600.svg') + '?width=510'}
-              alt={hotImage?.altText || product.title}
+              className={`${img} ${(shouldTransition && hot) ? 'opacity-0' : 'opacity-1'}`}
+              src={imgSrcOr(image, '/600.svg') + '?width=510'}
+              alt={image?.altText || product.title}
               sizes="510px"
-            />}
-          {!product.availableForSale &&
-            <div className="z-50 absolute left-0 bottom-0 pb-2 flex">
-              <span className="rounded-full px-2 text-xs font-semibold bg-gray-300 text-gray-700 shadow">
-                Sold out
-              </span>
-            </div>}
+            />
+            {shouldTransition &&
+              <img
+                className={`${img} ${(hot) ? 'opacity-1' : 'opacity-0'}`}
+                src={imgSrcOr(hotImage, '/600.svg') + '?width=510'}
+                alt={hotImage?.altText || product.title}
+                sizes="510px"
+              />}
+            {!product.availableForSale &&
+              <div className="z-50 absolute left-0 bottom-0 pb-2 flex">
+                <span className="rounded-full px-2 text-xs font-semibold bg-gray-300 text-gray-700 shadow">
+                  Sold out
+                </span>
+              </div>}
+          </div>
         </div>
         {/* group hover doesn't work? */}
-        <div className={`font-semibold text-sm mt-1 mb-1 ${hot ? 'text-purple-700 underline' : 'text-gray-600'}`}>
+        <div className={`font-semibold text-sm mt-2 mb-1 ${hot ? 'text-purple-700 underline' : 'text-gray-600'}`}>
           {product.title}
         </div>
         {price}
       </Link>
-    </li>
+    </div>
   )
 }
 
 export function ProductSkeleton() {
   return (
-    <li className="bg-white rounded-lg shadow-sm p-3 flex flex-col gap-y-3 border border-gray-300">
-      <div className="bg-gray-200 rounded aspect-square transform scale-[.975]"></div>
-      <div className="bg-gray-200 rounded-full h-3"></div>
-      <div className="bg-gray-200 rounded-full w-2/3 h-3"></div>
-    </li>
+    <div className="flex flex-col gap-y-3 mb-6">
+      <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-300">
+        <div className="bg-gray-200 rounded aspect-square transform scale-[.975]"></div>
+      </div>
+      <div className="bg-gray-300 rounded-full w-1/2 h-3"></div>
+      <div className="bg-gray-300 rounded-full w-1/3 h-3"></div>
+    </div>
   )
 }
