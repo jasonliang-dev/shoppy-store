@@ -17,8 +17,10 @@ export default function ProductPage() {
       setProduct(json)
     }
 
-    setProduct(null)
-    getProduct()
+    if (id !== '') {
+      setProduct(null)
+      getProduct()
+    }
   }, [id])
 
   return product ? <ProductDetails product={product} /> : <ProductSkeleton />
@@ -26,15 +28,13 @@ export default function ProductPage() {
 
 function ProductSkeleton() {
   return (
-    <div className="container max-w-5xl mx-auto mt-8">
+    <div className="container max-w-5xl mx-auto mt-8 px-2">
       <Head>
         <title>Product</title>
       </Head>
-      <div className="animate-pulse flex items-start">
-        <div className="w-[30rem] flex-none">
-          <div className="rounded-lg shadow-sm bg-gray-200 border border-gray-300 aspect-square" />
-        </div>
-        <div className="ml-8 w-full flex flex-col gap-y-4">
+      <div className="animate-pulse flex items-start flex-col md:flex-row">
+        <div className="w-full md:w-[20rem] lg:w-[30rem] flex-none rounded-lg shadow-sm bg-gray-200 border border-gray-300 aspect-square" />
+        <div className="mt-8 md:mt-0 md:ml-8 w-full flex flex-col gap-y-4">
           <div className="bg-gray-300 rounded-lg h-5 w-full max-w-[30rem]"></div>
           <div className="bg-gray-300 rounded-full h-3 w-full max-w-[10rem]"></div>
           <div className="bg-gray-300 rounded-full h-3 w-full max-w-[12rem]"></div>
@@ -130,12 +130,14 @@ function ProductDetails({ product }: { product: Product }) {
         <title>{product.title}</title>
       </Head>
       <div className="flex items-start flex-col md:flex-row">
-        <div className="md:w-[30rem] flex-none">
+        <div className="md:w-[20rem] lg:w-[30rem] flex-none">
           <img
             className="w-full aspect-square mb-3 rounded-lg object-contain"
-            src={imgSrcOr(image, '/600.svg') + '?width=640'}
+            src={imgSrcOr(image, '/600.svg') + '?width=800'}
             alt={image?.altText || ''}
-            sizes="640px"
+            sizes="800px"
+            loading="eager"
+            decoding="sync"
           />
           <div className="grid grid-cols-4 gap-2">
             {product.images.map(img =>
@@ -143,9 +145,11 @@ function ProductDetails({ product }: { product: Product }) {
                 key={img.id}
                 onClick={() => setImage(img)}
                 className="cursor-pointer w-full aspect-square rounded border border-gray-400 bg-white object-cover"
-                src={imgSrcOr(img, '/600.svg') + '?width=640'}
+                src={imgSrcOr(img, '/600.svg') + '?width=120'}
                 alt={img?.altText || ''}
                 sizes="120px"
+                loading="lazy"
+                decoding="async"
               />
             )}
           </div>

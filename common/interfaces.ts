@@ -93,7 +93,7 @@ export type Shop = {
   moneyFormat: string,
 }
 
-export function imgSrcOr(image: ProductImage | null, fallback: string) {
+export function imgSrcOr(image: ProductImage | null, fallback = '') {
   if (!image) {
     return fallback
   }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ReactNode, useRef, useCallback } from 'react'
+import React, { useState, useEffect, ReactNode } from 'react'
 import Head from 'next/head'
 import { Product } from '@/common/interfaces'
 import Link from 'next/link'
@@ -7,10 +7,39 @@ import { Menu, Transition } from '@headlessui/react'
 import { useShop } from '@/common/ShopContext'
 import { useRouter } from 'next/router'
 
+// from the next.js docs:
+// https://nextjs.org/docs/api-reference/next/router#router-object
+
+// > query: Object - The query string parsed to an object, including dynamic route
+// > parameters. It will be an empty object during prerendering if the page
+// > doesn't use Server-side Rendering. Defaults to {}
+
+// when page is statically optimized, router.query.id will initially be empty,
+// even if id is provided. rendering server side fixes this.
+
+// this is done because I'd like:
+//
+// the `/catalog` route to show all products
+// - router.query.id === undefined
+//
+// and `/catalog/[id]` to filter by collection
+// - router.query.id === [id]
+// - but on load, router.query.id === undefined
+
+// without server side rendering, I don't think it's possible to tell if we're
+// showing all products or filtering by collection without some hacks like
+// waiting for page to settle with setTimeout.
+export function getServerSideProps() {
+  return { props: {} }
+}
+
 export default function CatalogPage() {
-  const searchRequestPerformedAndHistoryPushedFlagBecauseReactUseEffectHookSucks = useRef(false)
   const router = useRouter()
-  const [search, setSearch] = useState('')
+
+  const handle = String(router.query.id || '')
+  const search = String(router.query.search || '')
+
+  const [searchText, setSearchText] = useState(search)
   const [sort, setSort] = useState({ key: 'TITLE', reverse: false })
   const { collections } = useShop()
   const [products, setProducts] = useState<{
@@ -21,34 +50,46 @@ export default function CatalogPage() {
     stat: 'loading',
   })
 
-  const handle = String(router.query.id || '')
   const collection = collections.find(col => col.handle === handle)
 
   useEffect(() => {
     if (handle !== '') {
-      setSearch('')
-    }
-
-    if (searchRequestPerformedAndHistoryPushedFlagBecauseReactUseEffectHookSucks.current) {
-      searchRequestPerformedAndHistoryPushedFlagBecauseReactUseEffectHookSucks.current = false
-      return
+      setSearchText('')
     }
 
     async function refreshProducts() {
       setProducts(p => ({ list: p.list, stat: 'loading' }))
-      const json = await fetchWithCollection(handle, sort)
+
+      let res
+      if (handle === '') {
+        res = await fetch('/api/products?' + new URLSearchParams({
+          title: search,
+          sort: sort.key,
+          reverse: sort.reverse ? 'yes' : 'no',
+          num: '40',
+        }))
+      } else {
+        res = await fetch('/api/products?' + new URLSearchParams({
+          collection: handle,
+          sort: sort.key,
+          reverse: sort.reverse ? 'yes' : 'no',
+          num: '40',
+        }))
+      }
+      const json = await res.json()
+
       setProducts({ list: json, stat: 'loaded' })
     }
 
     refreshProducts()
-  }, [handle, sort])
+  }, [handle, search, sort])
 
   return (
     <div className="container mx-auto px-2 mt-8">
       <Head>
         <title>Catalog</title>
       </Head>
-      <span className="font-semibold text-gray-700 text-sm">Collection</span>
+      <span className="font-bold text-gray-700 text-sm">Collection</span>
       <h1 className="font-black text-4xl mb-4">
         {collection ? collection.title : 'All Products'}
       </h1>
@@ -56,17 +97,10 @@ export default function CatalogPage() {
         <div className="flex-0 md:w-[20rem]">
           <form
             className="mb-6"
-            onSubmit={async e => {
+            onSubmit={e => {
               e.preventDefault()
-
-              setProducts(p => ({ list: p.list, stat: 'loading' }))
-              const json = await fetchWithSearch(search, sort)
-              setProducts({ list: json, stat: 'loaded' })
-
-              if (handle !== '') {
-                searchRequestPerformedAndHistoryPushedFlagBecauseReactUseEffectHookSucks.current = true
-                router.push('/catalog')
-              }
+              const url = '/catalog?' + new URLSearchParams({ search: searchText })
+              router.push(url)
             }}
           >
             <label htmlFor="search" className="block font-bold text-sm text-gray-700 mb-1">
@@ -78,8 +112,8 @@ export default function CatalogPage() {
                 className="min-w-0 flex-1 px-3 py-2 @control"
                 placeholder="Search all products..."
                 type="text"
-                onChange={e => setSearch(e.target.value)}
-                value={search}
+                onChange={e => setSearchText(e.target.value)}
+                value={searchText}
               />
               <button className="flex items-center px-3 py-2 ml-2 @btn" type="submit">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-700">
@@ -112,15 +146,20 @@ export default function CatalogPage() {
           </div>
         </div>
         <div className="flex-1 mt-4 md:mt-0 md:ml-8">
-          <div className="flex justify-end items-center mb-4">
+          <div className="flex flex-col gap-2 sm:flex-row justify-end items-end mb-4">
             <Dropdown
-              className="ml-2 md:hidden"
+              className="md:hidden"
               button={
                 <>
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-700">
                     <path fillRule="evenodd" d="M5.5 3A2.5 2.5 0 003 5.5v2.879a2.5 2.5 0 00.732 1.767l6.5 6.5a2.5 2.5 0 003.536 0l2.878-2.878a2.5 2.5 0 000-3.536l-6.5-6.5A2.5 2.5 0 008.38 3H5.5zM6 7a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                   </svg>
-                  <span className="ml-2">Collection</span>
+                  <span className="ml-2">
+                    Collection:
+                    <span className="ml-1 text-sm text-gray-800 font-semibold">
+                      {collection?.title || 'All'}
+                    </span>
+                  </span>
                 </>
               }
               items={[
@@ -136,14 +175,27 @@ export default function CatalogPage() {
               ]}
             />
             <Dropdown
-              className="ml-2"
               button={
                 <>
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-700">
-                    <path fillRule="evenodd" d="M2.24 6.8a.75.75 0 001.06-.04l1.95-2.1v8.59a.75.75 0 001.5 0V4.66l1.95 2.1a.75.75 0 101.1-1.02l-3.25-3.5a.75.75 0 00-1.1 0L2.2 5.74a.75.75 0 00.04 1.06zm8 6.4a.75.75 0 00-.04 1.06l3.25 3.5a.75.75 0 001.1 0l3.25-3.5a.75.75 0 10-1.1-1.02l-1.95 2.1V6.75a.75.75 0 00-1.5 0v8.59l-1.95-2.1a.75.75 0 00-1.06-.04z" clipRule="evenodd" />
-                  </svg>
+                  {sort.reverse
+                    ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-700">
+                        <path fillRule="evenodd" d="M2 3.75A.75.75 0 012.75 3h11.5a.75.75 0 010 1.5H2.75A.75.75 0 012 3.75zM2 7.5a.75.75 0 01.75-.75h7.508a.75.75 0 010 1.5H2.75A.75.75 0 012 7.5zM14 7a.75.75 0 01.75.75v6.59l1.95-2.1a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 111.1-1.02l1.95 2.1V7.75A.75.75 0 0114 7zM2 11.25a.75.75 0 01.75-.75h4.562a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-700">
+                        <path fillRule="evenodd" d="M2 3.75A.75.75 0 012.75 3h11.5a.75.75 0 010 1.5H2.75A.75.75 0 012 3.75zM2 7.5a.75.75 0 01.75-.75h6.365a.75.75 0 010 1.5H2.75A.75.75 0 012 7.5zM14 7a.75.75 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02l-1.95-2.1v6.59a.75.75 0 01-1.5 0V9.66l-1.95 2.1a.75.75 0 11-1.1-1.02l3.25-3.5A.75.75 0 0114 7zM2 11.25a.75.75 0 01.75-.75H7A.75.75 0 017 12H2.75a.75.75 0 01-.75-.75z" clipRule="evenodd" />
+                      </svg>
+                    )}
                   <span className="ml-2">
-                    Sort by...
+                    Sort by:
+                    <span className="ml-1 text-sm text-gray-800 font-semibold">
+                      {{
+                        "BEST_SELLING": "Best selling",
+                        "TITLE": "Name",
+                        "PRICE": "Price",
+                      }[sort.key]}
+                    </span>
                   </span>
                 </>
               }
@@ -214,38 +266,15 @@ export default function CatalogPage() {
   )
 }
 
-type SortOrder = {
-  key: string,
-  reverse: boolean,
-}
-
-async function fetchWithCollection(handle: string, sort: SortOrder) {
-  const res = await fetch('/api/products?' + new URLSearchParams({
-    reverse: sort.reverse ? 'yes' : 'no',
-    sort: sort.key,
-    collection: handle,
-    num: '40',
-  }))
-  return await res.json()
-}
-
-async function fetchWithSearch(search: string, sort: SortOrder) {
-  const res = await fetch('/api/products?' + new URLSearchParams({
-    title: search,
-    reverse: sort.reverse ? 'yes' : 'no',
-    sort: sort.key,
-    num: '40',
-  }))
-  return await res.json()
-}
-
-type DropdownItem = string | {
-  icon?: ReactNode,
-  name: string,
-  onClick: () => void,
-}
-
-function Dropdown({ button, items, className }: { button: ReactNode, items: DropdownItem[], className?: string }) {
+function Dropdown({
+  button,
+  items,
+  className,
+}: {
+  button: ReactNode,
+  items: (string | { icon?: ReactNode, name: string, onClick: () => void })[],
+  className?: string,
+}) {
   return (
     <Menu as="div" className={className}>
       <Menu.Button className="px-2 py-1 @btn flex items-center">

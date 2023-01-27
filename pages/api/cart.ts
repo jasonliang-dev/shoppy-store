@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { client } from '@/common/shopify'
+import { LineItem } from '@/common/interfaces'
 
 type Data = any
 
@@ -15,5 +16,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     cart = await client.checkout.create()
   }
 
-  res.status(200).json(JSON.parse(JSON.stringify(cart)))
+  cart = JSON.parse(JSON.stringify(cart))
+  cart.lineItems = cart.lineItems.filter((item: LineItem) => item.variant !== null)
+
+  res.status(200).json(cart)
 }

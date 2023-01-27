@@ -18,13 +18,15 @@ export default function HomePage() {
         sort: 'BEST_SELLING',
         collection: 'homepage',
       }))
-
       const json = await res.json()
+
       setProducts(json)
     }
 
     getProducts()
   }, [])
+
+  const hero = homepage ? imgSrcOr(homepage.image) : ''
 
   return (
     <div>
@@ -34,9 +36,11 @@ export default function HomePage() {
       <div className="relative h-[40rem]">
         <img
           className="z-10 absolute inset-0 w-full h-full object-cover brightness-[.5]"
-          src={homepage?.image?.src || ''}
+          srcSet={`${hero}?width=640 640w ${hero}?width=768 768w ${hero}?width=1024 1024w, ${hero}?width=1280 1820w, ${hero}?width=1536 1536w`}
           alt=""
           sizes="100vw"
+          loading="eager"
+          decoding="sync"
         />
         <div className="relative z-20 flex flex-col items-center justify-center h-full">
           <h1 className="font-black text-4xl sm:text-6xl mb-4 text-white max-w-4xl text-center">
@@ -59,13 +63,15 @@ export default function HomePage() {
             <div key={collection.id} className="w-1/2 lg:w-1/3 p-3">
               <Link
                 href={`/catalog/${collection.handle}`}
-                className="group rounded-lg shadow-lg overflow-hidden relative p-4 flex flex-col justify-end h-[20rem] sm:h-[25rem]"
+                className="group rounded-lg shadow-lg overflow-hidden relative p-4 flex flex-col justify-end h-[15rem] sm:h-[20rem] md:h-[25rem]"
               >
                 <img
                   className="z-10 absolute w-full h-full object-cover inset-0 object-cover transition transform group-hover:scale-105"
-                  src={imgSrcOr(collection.image, '') + '?width=630'}
+                  src={imgSrcOr(collection.image) + '?width=630'}
                   alt={collection.image?.altText || ''}
                   sizes="630px"
+                  loading="lazy"
+                  decoding="async"
                 />
                 <div className="z-20 absolute bg-gradient-to-t from-gray-900 to-transparent inset-0 opacity-75" />
                 <div className="z-30 relative leading-tight">

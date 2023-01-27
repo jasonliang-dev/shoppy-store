@@ -58,6 +58,7 @@ export default function ProductItem({ product, className }: { product: Product, 
               alt={image?.altText || product.title}
               sizes="510px"
               loading="lazy"
+              decoding="async"
             />
             {shouldTransition &&
               <img
@@ -66,6 +67,7 @@ export default function ProductItem({ product, className }: { product: Product, 
                 alt={hotImage?.altText || product.title}
                 sizes="510px"
                 loading="lazy"
+                decoding="async"
               />}
             {!product.availableForSale &&
               <div className="z-50 absolute left-0 bottom-0 pb-2 flex">

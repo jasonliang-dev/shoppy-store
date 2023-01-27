@@ -49,6 +49,8 @@ export default function CartPage() {
                       src={imgSrcOr(item.variant.image, '/600.svg') + '?width=80'}
                       alt={item.variant.image?.altText || item.variant.title}
                       sizes="4rem"
+                      loading="lazy"
+                      decoding="async"
                     />
                     <div className="ml-3">
                       <div className="flex items-center">

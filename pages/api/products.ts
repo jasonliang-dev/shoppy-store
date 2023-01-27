@@ -20,6 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return
   }
 
+  // query products by collection handle
   const { data } = await graphql(`
     query ($handle: String!, $first: Int!, $sortKey: ProductCollectionSortKeys, $reverse: Boolean) {
       collection(handle: $handle) {
