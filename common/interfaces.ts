@@ -72,7 +72,7 @@ export type Product = {
 export type LineItem = {
   id: string,
   title: string,
-  variant: ProductVariant
+  variant: ProductVariant | null,
   quantity: number,
 }
 

@@ -179,6 +179,7 @@ function CartOverlay({
     setQuantityInput,
     inputBlur,
   } = useCart()
+
   return (
     <Transition show={open}>
       <div className="z-[9999] fixed inset-0">
@@ -205,55 +206,61 @@ function CartOverlay({
             <h2 className="font-black text-3xl mb-3 pt-4 px-4">Your cart</h2>
             <div className="flex-1 overflow-auto">
               <ul className={`${updating ? 'opacity-75' : ''} flex flex-col gap-y-8`}>
-                {cart?.lineItems.map((item, index) => (
-                  <li key={item.id} className="px-4 flex items-center">
-                    <div className="flex items-center gap-x-2 mr-6">
-                      <img
-                        className="flex-none w-[3rem] border rounded aspect-square shadow-sm bg-white object-contain"
-                        src={imgSrcOr(item.variant.image, '/600.svg') + '?width=80'}
-                        alt={item.variant.image?.altText || item.variant.title}
-                        sizes="80px"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                      <div className="ml-3">
-                        <Link
-                          onClick={() => setOpen(false)}
-                          href={{
-                            pathname: '/product/[id]',
-                            query: { id: item.variant.product.handle },
-                          }}
-                          className="font-semibold text-gray-900 hover:underline"
-                        >
-                          {item.title}
-                        </Link>
-                        <div className="text-gray-700">{item.variant.title}</div>
-                        <div className="text-gray-700 text-sm font-semibold">
-                          {moneyFormat(item.variant.price, item.quantity)}
+                {cart?.lineItems.map((item, index) => {
+                  if (!item.variant) {
+                    return null
+                  }
+
+                  return (
+                    <li key={item.id} className="px-4 flex items-center">
+                      <div className="flex items-center gap-x-2 mr-6">
+                        <img
+                          className="flex-none w-[3rem] border rounded aspect-square shadow-sm bg-white object-contain"
+                          src={imgSrcOr(item.variant.image, '/600.svg') + '?width=80'}
+                          alt={item.variant.image?.altText || item.variant.title}
+                          sizes="80px"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                        <div className="ml-3">
+                          <Link
+                            onClick={() => setOpen(false)}
+                            href={{
+                              pathname: '/product/[id]',
+                              query: { id: item.variant.product.handle },
+                            }}
+                            className="font-semibold text-gray-900 hover:underline"
+                          >
+                            {item.title}
+                          </Link>
+                          <div className="text-gray-700">{item.variant.title}</div>
+                          <div className="text-gray-700 text-sm font-semibold">
+                            {moneyFormat(item.variant.price, item.quantity)}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="ml-auto flex justify-between items-center gap-x-2">
-                      <input
-                        type="text"
-                        className="min-w-0 w-[4rem] text-center px-2 py-1 @control"
-                        onBlur={e => inputBlur(Number(e.target.value), index)}
-                        onChange={e => setQuantityInput(index, e.target.value)}
-                        value={quantities[index] === undefined ? 0 : quantities[index]}
-                      />
-                    </div>
-                    <button
-                      disabled={updating}
-                      className="ml-6 p-1 text-red-500 rounded hover:shadow-sm border border-transparent hover:border-gray-300 hover:bg-white"
-                      type="button"
-                      onClick={() => removeLine(item.id)}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM6.75 9.25a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                  </li>
-                ))}
+                      <div className="ml-auto flex justify-between items-center gap-x-2">
+                        <input
+                          type="text"
+                          className="min-w-0 w-[4rem] text-center px-2 py-1 @control"
+                          onBlur={e => inputBlur(Number(e.target.value), index)}
+                          onChange={e => setQuantityInput(index, e.target.value)}
+                          value={quantities[index] === undefined ? 0 : quantities[index]}
+                        />
+                      </div>
+                      <button
+                        disabled={updating}
+                        className="ml-6 p-1 text-red-500 rounded hover:shadow-sm border border-transparent hover:border-gray-300 hover:bg-white"
+                        type="button"
+                        onClick={() => removeLine(item.id)}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM6.75 9.25a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </li>
+                  )
+                })}
               </ul>
             </div>
             <div className="px-4 pb-4 border-t border-gray-300 flex gap-x-3 items-center justify-end pt-4">
