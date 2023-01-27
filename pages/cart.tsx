@@ -121,8 +121,7 @@ function CartContent() {
               </div>
             </li>
           )
-        }
-        )}
+        })}
       </ul>
       <div className="flex flex-col items-end">
         <div className="mb-6">
@@ -137,5 +136,5 @@ function CartContent() {
         </a>
       </div>
     </>
-    )
+  )
 }
