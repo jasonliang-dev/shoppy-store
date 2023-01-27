@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ReactNode } from 'react'
+import React, { useState, useEffect, ReactNode, useRef, useCallback } from 'react'
 import Head from 'next/head'
 import { Product } from '@/common/interfaces'
 import Link from 'next/link'
@@ -8,8 +8,11 @@ import { useShop } from '@/common/ShopContext'
 import { useRouter } from 'next/router'
 
 export default function CatalogPage() {
+  const searchRequestPerformedAndHistoryPushedFlagBecauseReactUseEffectHookSucks = useRef(false)
   const router = useRouter()
   const [search, setSearch] = useState('')
+  const [sort, setSort] = useState({ key: 'TITLE', reverse: false })
+  const { collections } = useShop()
   const [products, setProducts] = useState<{
     list: Product[],
     stat: 'loaded' | 'loading' | 'error',
@@ -17,49 +20,28 @@ export default function CatalogPage() {
     list: [],
     stat: 'loading',
   })
-  const [sort, setSort] = useState({ key: 'TITLE', reverse: false })
-  const { collections } = useShop()
 
   const handle = String(router.query.id || '')
   const collection = collections.find(col => col.handle === handle)
-
-  async function refreshProducts(sort: { key: string, reverse: boolean }) {
-    setProducts(p => ({ ...p, stat: 'loading' }))
-    setSort(sort)
-
-    const num = '40'
-    if (handle !== '') {
-      const res = await fetch('/api/products?' + new URLSearchParams({
-        reverse: sort.reverse ? 'yes' : 'no',
-        sort: sort.key,
-        collection: handle,
-        num,
-      }))
-      const json = await res.json()
-      setProducts({ list: json, stat: 'loaded' })
-    } else {
-      const res = await fetch('/api/products?' + new URLSearchParams({
-        title: search,
-        reverse: sort.reverse ? 'yes' : 'no',
-        sort: sort.key,
-        num,
-      }))
-
-      const json = await res.json()
-      setProducts({ list: json, stat: 'loaded' })
-    }
-  }
 
   useEffect(() => {
     if (handle !== '') {
       setSearch('')
     }
-    refreshProducts(sort)
-  }, [handle])
 
-  useEffect(() => {
-    refreshProducts({ key: 'TITLE', reverse: false })
-  }, [])
+    if (searchRequestPerformedAndHistoryPushedFlagBecauseReactUseEffectHookSucks.current) {
+      searchRequestPerformedAndHistoryPushedFlagBecauseReactUseEffectHookSucks.current = false
+      return
+    }
+
+    async function refreshProducts() {
+      setProducts(p => ({ list: p.list, stat: 'loading' }))
+      const json = await fetchWithCollection(handle, sort)
+      setProducts({ list: json, stat: 'loaded' })
+    }
+
+    refreshProducts()
+  }, [handle, sort])
 
   return (
     <div className="container mx-auto px-2 mt-8">
@@ -74,11 +56,15 @@ export default function CatalogPage() {
         <div className="flex-0 md:w-[20rem]">
           <form
             className="mb-6"
-            onSubmit={e => {
+            onSubmit={async e => {
               e.preventDefault()
-              if (handle === '') {
-                refreshProducts(sort)
-              } else {
+
+              setProducts(p => ({ list: p.list, stat: 'loading' }))
+              const json = await fetchWithSearch(search, sort)
+              setProducts({ list: json, stat: 'loaded' })
+
+              if (handle !== '') {
+                searchRequestPerformedAndHistoryPushedFlagBecauseReactUseEffectHookSucks.current = true
                 router.push('/catalog')
               }
             }}
@@ -164,7 +150,7 @@ export default function CatalogPage() {
               items={[
                 {
                   name: "Best selling",
-                  onClick: () => refreshProducts({ key: 'BEST_SELLING', reverse: false }),
+                  onClick: () => setSort({ key: 'BEST_SELLING', reverse: false }),
                   icon:
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-700">
                       <path d="M15.98 1.804a1 1 0 00-1.96 0l-.24 1.192a1 1 0 01-.784.785l-1.192.238a1 1 0 000 1.962l1.192.238a1 1 0 01.785.785l.238 1.192a1 1 0 001.962 0l.238-1.192a1 1 0 01.785-.785l1.192-.238a1 1 0 000-1.962l-1.192-.238a1 1 0 01-.785-.785l-.238-1.192zM6.949 5.684a1 1 0 00-1.898 0l-.683 2.051a1 1 0 01-.633.633l-2.051.683a1 1 0 000 1.898l2.051.684a1 1 0 01.633.632l.683 2.051a1 1 0 001.898 0l.683-2.051a1 1 0 01.633-.633l2.051-.683a1 1 0 000-1.898l-2.051-.683a1 1 0 01-.633-.633L6.95 5.684zM13.949 13.684a1 1 0 00-1.898 0l-.184.551a1 1 0 01-.632.633l-.551.183a1 1 0 000 1.898l.551.183a1 1 0 01.633.633l.183.551a1 1 0 001.898 0l.184-.551a1 1 0 01.632-.633l.551-.183a1 1 0 000-1.898l-.551-.184a1 1 0 01-.633-.632l-.183-.551z" />
@@ -173,7 +159,7 @@ export default function CatalogPage() {
                 'separator 0',
                 {
                   name: "Name, ascending",
-                  onClick: () => refreshProducts({ key: 'TITLE', reverse: false }),
+                  onClick: () => setSort({ key: 'TITLE', reverse: false }),
                   icon:
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-700">
                       <path fillRule="evenodd" d="M2 3.75A.75.75 0 012.75 3h11.5a.75.75 0 010 1.5H2.75A.75.75 0 012 3.75zM2 7.5a.75.75 0 01.75-.75h6.365a.75.75 0 010 1.5H2.75A.75.75 0 012 7.5zM14 7a.75.75 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02l-1.95-2.1v6.59a.75.75 0 01-1.5 0V9.66l-1.95 2.1a.75.75 0 11-1.1-1.02l3.25-3.5A.75.75 0 0114 7zM2 11.25a.75.75 0 01.75-.75H7A.75.75 0 017 12H2.75a.75.75 0 01-.75-.75z" clipRule="evenodd" />
@@ -181,7 +167,7 @@ export default function CatalogPage() {
                 },
                 {
                   name: "Name, descending",
-                  onClick: () => refreshProducts({ key: 'TITLE', reverse: true }),
+                  onClick: () => setSort({ key: 'TITLE', reverse: true }),
                   icon:
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-700">
                       <path fillRule="evenodd" d="M2 3.75A.75.75 0 012.75 3h11.5a.75.75 0 010 1.5H2.75A.75.75 0 012 3.75zM2 7.5a.75.75 0 01.75-.75h7.508a.75.75 0 010 1.5H2.75A.75.75 0 012 7.5zM14 7a.75.75 0 01.75.75v6.59l1.95-2.1a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 111.1-1.02l1.95 2.1V7.75A.75.75 0 0114 7zM2 11.25a.75.75 0 01.75-.75h4.562a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clipRule="evenodd" />
@@ -190,7 +176,7 @@ export default function CatalogPage() {
                 'separator 1',
                 {
                   name: "Price, ascending",
-                  onClick: () => refreshProducts({ key: 'PRICE', reverse: false }),
+                  onClick: () => setSort({ key: 'PRICE', reverse: false }),
                   icon:
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-700">
                       <path fillRule="evenodd" d="M2 3.75A.75.75 0 012.75 3h11.5a.75.75 0 010 1.5H2.75A.75.75 0 012 3.75zM2 7.5a.75.75 0 01.75-.75h6.365a.75.75 0 010 1.5H2.75A.75.75 0 012 7.5zM14 7a.75.75 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02l-1.95-2.1v6.59a.75.75 0 01-1.5 0V9.66l-1.95 2.1a.75.75 0 11-1.1-1.02l3.25-3.5A.75.75 0 0114 7zM2 11.25a.75.75 0 01.75-.75H7A.75.75 0 017 12H2.75a.75.75 0 01-.75-.75z" clipRule="evenodd" />
@@ -198,7 +184,7 @@ export default function CatalogPage() {
                 },
                 {
                   name: "Price, descending",
-                  onClick: () => refreshProducts({ key: 'PRICE', reverse: true }),
+                  onClick: () => setSort({ key: 'PRICE', reverse: true }),
                   icon:
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-700">
                       <path fillRule="evenodd" d="M2 3.75A.75.75 0 012.75 3h11.5a.75.75 0 010 1.5H2.75A.75.75 0 012 3.75zM2 7.5a.75.75 0 01.75-.75h7.508a.75.75 0 010 1.5H2.75A.75.75 0 012 7.5zM14 7a.75.75 0 01.75.75v6.59l1.95-2.1a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 111.1-1.02l1.95 2.1V7.75A.75.75 0 0114 7zM2 11.25a.75.75 0 01.75-.75h4.562a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clipRule="evenodd" />
@@ -226,6 +212,31 @@ export default function CatalogPage() {
       </div>
     </div>
   )
+}
+
+type SortOrder = {
+  key: string,
+  reverse: boolean,
+}
+
+async function fetchWithCollection(handle: string, sort: SortOrder) {
+  const res = await fetch('/api/products?' + new URLSearchParams({
+    reverse: sort.reverse ? 'yes' : 'no',
+    sort: sort.key,
+    collection: handle,
+    num: '40',
+  }))
+  return await res.json()
+}
+
+async function fetchWithSearch(search: string, sort: SortOrder) {
+  const res = await fetch('/api/products?' + new URLSearchParams({
+    title: search,
+    reverse: sort.reverse ? 'yes' : 'no',
+    sort: sort.key,
+    num: '40',
+  }))
+  return await res.json()
 }
 
 type DropdownItem = string | {

@@ -70,6 +70,11 @@ export default function App({ Component, pageProps }: AppProps) {
       updateCart(json)
     }
 
+    getShop()
+    getCart()
+  }, [])
+
+  useEffect(() => {
     function routeChangeStart() {
       // setTransitioning(true)
     }
@@ -78,9 +83,6 @@ export default function App({ Component, pageProps }: AppProps) {
       // setTransitioning(false)
     }
 
-    getShop()
-    getCart()
-
     router.events.on('routeChangeStart', routeChangeStart)
     router.events.on('routeChangeComplete', routeChangeComplete)
 
@@ -88,7 +90,7 @@ export default function App({ Component, pageProps }: AppProps) {
       router.events.off('routeChangeStart', routeChangeStart)
       router.events.off('routeChangeComplete', routeChangeComplete)
     }
-  }, [])
+  }, [router.events])
 
   function moneyFormat(m: Money | null, factor = 1) {
     if (!m) {
@@ -158,7 +160,11 @@ export default function App({ Component, pageProps }: AppProps) {
             <div className="grid grid-cols-3 gap-y-3 gap-x-8 mb-8">
               <span className={`${label} col-span-3`}>Collections</span>
               {group.collections.map(collection =>
-                <Link className={link} href={`/catalog/${collection.handle}`}>
+                <Link
+                  key={collection.id}
+                  className={link}
+                  href={`/catalog/${collection.handle}`}
+                >
                   {collection.title}
                 </Link>)}
             </div>
