@@ -103,7 +103,7 @@ function ProductDetails({ product }: { product: Product }) {
 
   let price
   if (!variant) {
-    price = <span>&nsbp;</span>
+    price = <span className="text-gray-700">Not available</span>
   } else if (
     variant.compareAtPrice
     && Number(variant.compareAtPrice?.amount) > Number(variant.price.amount)
@@ -118,10 +118,7 @@ function ProductDetails({ product }: { product: Product }) {
         </div>
       </div>
   } else {
-    price =
-      <div className="">
-        {moneyFormat(variant.price)}
-      </div>
+    price = moneyFormat(variant.price)
   }
 
   return (
@@ -156,7 +153,7 @@ function ProductDetails({ product }: { product: Product }) {
         </div>
         <div className="mt-8 md:mt-0 md:ml-8">
           <h2 className="text-3xl font-black mb-2">{product.title}</h2>
-          <div className="flex gap-x-2 items-center text-2xl">
+          <div className="items-center text-2xl">
             {price}
           </div>
           {product.options.map(option => (
