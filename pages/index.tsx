@@ -109,37 +109,9 @@ export default function HomePage() {
             {Array.from(Array(6)).map((_, i) => <ProductSkeleton key={i} />)}
           </ul>}
       </div>
-      <div className="py-20 bg-zinc-800 mt-8">
-        <article className="mx-auto prose prose-invert px-2">
-          <h2 className="font-black">About</h2>
-          <p>
-            This isn&#39;t an actual store. Sorry to burst your bubble. This is
-            a custom storefront using a bit of TypeScript and some well known
-            libraries such as:
-          </p>
-          <ul>
-            <li>Next.js, a React framework</li>
-            <li>Shopify JS Buy SDK, which uses the Shopify Storefront API</li>
-            <li>Tailwind CSS, for styling this website</li>
-          </ul>
-          <p>
-            I think it&#39;s kinda neat that this can be put together pretty
-            easily with not much code.
-          </p>
-        </article>
-      </div>
-      <article className="mx-auto prose py-12 mt-8 px-2">
-        <h2 className="font-black">Image Credit</h2>
-        <p>Thank you Unsplash for providing free photos and for existing.</p>
-        <ul>
-          <li>Homepage Image: by <a href="https://unsplash.com/@maarten_jpg?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Maarten Duineveld</a> on <a href="https://unsplash.com/photos/2QNDSPCSzCI?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a></li>
-          <li>Ski: by <a href="https://unsplash.com/@mattpunsplash?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Matthieu Pétiard</a> on <a href="https://unsplash.com/photos/Pf6e3o0GL4M?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a></li>
-          <li>Snowboard: by <a href="https://unsplash.com/@danedeaner?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Dane Deaner</a> on <a href="https://unsplash.com/photos/j5asemKMmQY?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a></li>
-          <li>Beanie: by <a href="https://unsplash.com/es/@karsten116?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Karsten Winegeart</a> on <a href="https://unsplash.com/photos/4QfPff4QwwI?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a></li>
-          <li>Helmet: by <a href="https://unsplash.com/@stevejjohnston?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Steve Johnston</a> on <a href="https://unsplash.com/photos/-l4HKil0o1g?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a></li>
-          <li>Goggles: by <a href="https://unsplash.com/@danny_lincoln?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Daniel Lincoln</a> on <a href="https://unsplash.com/photos/UNGYOAr0w5k?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a></li>
-        </ul>
-      </article>
+      {/* humor tailwind. mx-auto prose prose-invert bg-zinc-800 px-2 */}
+      {homepage?.descriptionHtml &&
+        <div dangerouslySetInnerHTML={{ __html: homepage.descriptionHtml }} />}
     </div>
   )
 }
