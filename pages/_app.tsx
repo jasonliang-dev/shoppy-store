@@ -104,8 +104,8 @@ export default function App({ Component, pageProps }: AppProps) {
     }
   }
 
-  const label = 'font-black text-gray-800 text-lg'
-  const link = 'text-gray-700 hover:text-gray-800 hover:underline text-sm font-semibold'
+  const label = 'font-black text-gray-800'
+  const link = 'text-gray-700 hover:text-gray-800 hover:underline text-sm'
 
   return (
     <>
@@ -148,21 +148,21 @@ export default function App({ Component, pageProps }: AppProps) {
             <Nav />
             <Component {...pageProps} />
           </div>
-          <footer className="bg-gray-200 py-12 px-10 mt-12 flex gap-x-24 border-t border-gray-300">
-            <div className="flex flex-col gap-y-3">
+          <footer className="bg-gray-200 py-12 px-10 mt-12 flex flex-wrap gap-x-24 border-t border-gray-300">
+            <div className="flex flex-col gap-y-3 mb-8">
               <span className={label}>Pages</span>
               <Link className={link} href="/">Home</Link>
               <Link className={link} href="/catalog">Catalog</Link>
               <Link className={link} href="/cart">Cart</Link>
             </div>
-            <div className="grid grid-cols-3 gap-y-3 gap-x-8">
+            <div className="grid grid-cols-3 gap-y-3 gap-x-8 mb-8">
               <span className={`${label} col-span-3`}>Collections</span>
               {group.collections.map(collection =>
                 <Link className={link} href={`/catalog/${collection.handle}`}>
                   {collection.title}
                 </Link>)}
             </div>
-            <div className="flex flex-col gap-y-3">
+            <div className="flex flex-col gap-y-3 mb-8">
               <span className={label}>More</span>
               <Link className={link} href="https://github.com/jasonliang-dev/shoppy-store">Source code on GitHub</Link>
             </div>

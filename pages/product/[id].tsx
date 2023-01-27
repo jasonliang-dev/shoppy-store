@@ -125,12 +125,12 @@ function ProductDetails({ product }: { product: Product }) {
   }
 
   return (
-    <div className="container max-w-5xl mx-auto mt-8">
+    <div className="container max-w-5xl mx-auto mt-8 px-2">
       <Head>
         <title>{product.title}</title>
       </Head>
-      <div className="flex items-start">
-        <div className="w-[30rem] flex-none">
+      <div className="flex items-start flex-col md:flex-row">
+        <div className="md:w-[30rem] flex-none">
           <img
             className="w-full aspect-square mb-3 rounded-lg object-contain"
             src={imgSrcOr(image, '/600.svg') + '?width=640'}
@@ -150,7 +150,7 @@ function ProductDetails({ product }: { product: Product }) {
             )}
           </div>
         </div>
-        <div className="ml-8">
+        <div className="mt-8 md:mt-0 md:ml-8">
           <h2 className="text-3xl font-black mb-2">{product.title}</h2>
           <div className="flex gap-x-2 items-center text-2xl">
             {price}

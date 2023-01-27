@@ -57,6 +57,7 @@ export default function ProductItem({ product, className }: { product: Product, 
               src={imgSrcOr(image, '/600.svg') + '?width=510'}
               alt={image?.altText || product.title}
               sizes="510px"
+              loading="lazy"
             />
             {shouldTransition &&
               <img
@@ -64,6 +65,7 @@ export default function ProductItem({ product, className }: { product: Product, 
                 src={imgSrcOr(hotImage, '/600.svg') + '?width=510'}
                 alt={hotImage?.altText || product.title}
                 sizes="510px"
+                loading="lazy"
               />}
             {!product.availableForSale &&
               <div className="z-50 absolute left-0 bottom-0 pb-2 flex">

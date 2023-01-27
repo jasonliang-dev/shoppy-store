@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { useShop } from '@/common/ShopContext'
 
 export default function Nav() {
-  const { shop, cart, setOverlay } = useShop()
+  const { cart, setOverlay } = useShop()
 
   const link = 'text-gray-900 hover:text-gray-700 hover:underline text-sm font-semibold '
 
@@ -15,10 +15,12 @@ export default function Nav() {
 
 
   return (
-    <nav className="flex items-center gap-x-8 px-8 py-4 bg-white border-b border-gray-300">
-      {shop?.name
-        ? <Link className={`${link} text-xl font-semibold`} href="/">{shop.name}</Link>
-        : <Link className={link} href="/">Home</Link>}
+    <nav className="flex items-center gap-x-8 px-4 sm:px-6 py-4 bg-white border-b border-gray-300">
+      <Link className={link} href="/">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+        </svg>
+      </Link>
       <Link className={link} href="/catalog">Products</Link>
       <button
         className="ml-auto text-gray-900 hover:text-gray-700 flex items-center"

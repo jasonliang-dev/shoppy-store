@@ -39,7 +39,7 @@ export default function HomePage() {
           sizes="100vw"
         />
         <div className="relative z-20 flex flex-col items-center justify-center h-full">
-          <h1 className="font-black text-6xl mb-4 text-white max-w-4xl text-center">
+          <h1 className="font-black text-4xl sm:text-6xl mb-4 text-white max-w-4xl text-center">
             The best snow gear for tumbing down mountains
           </h1>
           <Link
@@ -56,10 +56,10 @@ export default function HomePage() {
       <div className="container max-w-5xl mx-auto px-2 -mt-[8rem]">
         <div className="flex flex-wrap justify-center">
           {featuredCollections.map(collection =>
-            <div key={collection.id} className="w-1/3 p-3">
+            <div key={collection.id} className="w-1/2 lg:w-1/3 p-3">
               <Link
                 href={`/catalog/${collection.handle}`}
-                className="group rounded-lg shadow-lg overflow-hidden relative p-4 flex flex-col justify-end h-[25rem]"
+                className="group rounded-lg shadow-lg overflow-hidden relative p-4 flex flex-col justify-end h-[20rem] sm:h-[25rem]"
               >
                 <img
                   className="z-10 absolute w-full h-full object-cover inset-0 object-cover transition transform group-hover:scale-105"
@@ -85,7 +85,7 @@ export default function HomePage() {
             Shop all products
           </Link>
         </div>
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {typeof products !== 'string' && products.map(product =>
             <ProductItem key={product.id} product={product} />)}
         </div>
@@ -95,7 +95,7 @@ export default function HomePage() {
           </ul>}
       </div>
       <div className="py-20 bg-zinc-800 mt-8">
-        <article className="mx-auto prose prose-invert">
+        <article className="mx-auto prose prose-invert px-2">
           <h2 className="font-black">About</h2>
           <p>
             This isn&#39;t an actual store. Sorry to burst your bubble. This is
@@ -113,7 +113,7 @@ export default function HomePage() {
           </p>
         </article>
       </div>
-      <article className="mx-auto prose py-12 mt-8">
+      <article className="mx-auto prose py-12 mt-8 px-2">
         <h2 className="font-black">Image Credit</h2>
         <p>Thank you Unsplash for providing free photos and for existing.</p>
         <ul>

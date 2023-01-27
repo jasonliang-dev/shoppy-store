@@ -70,8 +70,8 @@ export default function CatalogPage() {
       <h1 className="font-black text-4xl mb-4">
         {collection ? collection.title : 'All Products'}
       </h1>
-      <div className="flex">
-        <div className="flex-0 w-[20rem]">
+      <div className="flex flex-col md:flex-row">
+        <div className="flex-0 md:w-[20rem]">
           <form
             className="mb-6"
             onSubmit={e => {
@@ -90,6 +90,7 @@ export default function CatalogPage() {
               <input
                 id="search"
                 className="min-w-0 flex-1 px-3 py-2 @control"
+                placeholder="Search all products..."
                 type="text"
                 onChange={e => setSearch(e.target.value)}
                 value={search}
@@ -101,29 +102,53 @@ export default function CatalogPage() {
               </button>
             </div>
           </form>
-          <span className="flex justify-between items-baseline font-bold text-sm text-gray-700 mb-2">
-            Collections
-            {collection &&
-              <Link
-                className="text-purple-600 hover:text-purple-900 hover:underline"
-                href="/catalog"
-              >
-                View all
-              </Link>}
-          </span>
-          <div className="flex flex-col gap-y-1">
-            {collections.map(col =>
-              <Link
-                key={col.id}
-                className={`${collection?.handle === col.handle ? 'bg-purple-200 text-purple-900' : 'hover:bg-gray-200 text-gray-600'} px-3 py-2 rounded text-left text-sm font-semibold`}
-                href={`/catalog/${col.handle}`}
-              >
-                {col.title}
-              </Link>)}
+          <div className="hidden md:block">
+            <span className="flex justify-between items-baseline font-bold text-sm text-gray-700 mb-2">
+              Collections
+              {collection &&
+                <Link
+                  className="text-purple-600 hover:text-purple-900 hover:underline"
+                  href="/catalog"
+                >
+                  View all
+                </Link>}
+            </span>
+            <div className="flex flex-col gap-y-1">
+              {collections.map(col =>
+                <Link
+                  key={col.id}
+                  className={`${collection?.handle === col.handle ? 'bg-purple-200 text-purple-900' : 'hover:bg-gray-200 text-gray-600'} px-3 py-2 rounded text-left text-sm font-semibold`}
+                  href={`/catalog/${col.handle}`}
+                >
+                  {col.title}
+                </Link>)}
+            </div>
           </div>
         </div>
-        <div className="flex-1 ml-8">
+        <div className="flex-1 mt-4 md:mt-0 md:ml-8">
           <div className="flex justify-end items-center mb-4">
+            <Dropdown
+              className="ml-2 md:hidden"
+              button={
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-700">
+                    <path fillRule="evenodd" d="M5.5 3A2.5 2.5 0 003 5.5v2.879a2.5 2.5 0 00.732 1.767l6.5 6.5a2.5 2.5 0 003.536 0l2.878-2.878a2.5 2.5 0 000-3.536l-6.5-6.5A2.5 2.5 0 008.38 3H5.5zM6 7a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                  <span className="ml-2">Collection</span>
+                </>
+              }
+              items={[
+                {
+                  name: "All products",
+                  onClick: () => router.push('/catalog'),
+                },
+                'separator 0',
+                ...collections.map(col => ({
+                  name: col.title,
+                  onClick: () => router.push(`/catalog/${col.handle}`),
+                }))
+              ]}
+            />
             <Dropdown
               className="ml-2"
               button={
@@ -183,7 +208,7 @@ export default function CatalogPage() {
             />
           </div>
           {products.stat === 'loaded' &&
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {products.list.map((product, index) =>
                 <div
                   key={product.id}
@@ -194,7 +219,7 @@ export default function CatalogPage() {
                 </div>)}
             </div>}
           {products.stat === 'loading' &&
-            <ul className="animate-pulse grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            <ul className="animate-pulse grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {Array.from(Array(12)).map((_, i) => <ProductSkeleton key={i} />)}
             </ul>}
         </div>
