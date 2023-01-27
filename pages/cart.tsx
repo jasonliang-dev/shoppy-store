@@ -1,7 +1,7 @@
 import Head from 'next/head'
 import Link from 'next/link'
 import { useShop } from '@/common/ShopContext'
-import { imgSrcOr } from '@/common/interfaces'
+import { imgUrl } from '@/common/interfaces'
 import useCart from '@/common/useCart'
 
 export default function CartPage() {
@@ -56,9 +56,9 @@ function CartContent() {
             <li key={item.id} className="flex flex-wrap md:flex-nowrap items-center py-4 border-b border-gray-300">
               <img
                 className="w-[4rem] border rounded aspect-square shadow-sm bg-white object-contain"
-                src={imgSrcOr(item.variant.image, '/600.svg') + '?width=80'}
+                src={imgUrl(item.variant.image, '80', '/600.svg')}
                 alt={item.variant.image?.altText || item.variant.title}
-                sizes="4rem"
+                sizes="80px"
                 loading="lazy"
                 decoding="async"
               />

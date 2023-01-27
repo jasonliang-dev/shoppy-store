@@ -93,12 +93,12 @@ export type Shop = {
   moneyFormat: string,
 }
 
-export function imgSrcOr(image: ProductImage | null, fallback = '') {
+export function imgUrl(image: ProductImage | null, width: string, fallback = '') {
   if (!image) {
     return fallback
   }
 
-  return image.src.split('?')[0]
+  const url = new URL(image.src)
+  url.searchParams.append('width', width)
+  return url.href
 }
-
-

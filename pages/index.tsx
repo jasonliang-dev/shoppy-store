@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
-import { imgSrcOr, Product } from '@/common/interfaces'
+import { imgUrl, Product } from '@/common/interfaces'
 import ProductItem, { ProductSkeleton } from '@/common/ProductItem'
 import Link from 'next/link'
 import { useShop } from '@/common/ShopContext'
@@ -26,7 +26,8 @@ export default function HomePage() {
     getProducts()
   }, [])
 
-  const hero = homepage ? imgSrcOr(homepage.image) : ''
+  const hero = homepage?.image?.src || ''
+  console.log(hero)
 
   return (
     <div>
@@ -36,7 +37,15 @@ export default function HomePage() {
       <div className="relative h-[40rem]">
         <img
           className="z-10 absolute inset-0 w-full h-full object-cover brightness-[.5]"
-          srcSet={`${hero}?width=640 640w ${hero}?width=768 768w ${hero}?width=1024 1024w, ${hero}?width=1280 1820w, ${hero}?width=1536 1536w`}
+          srcSet={hero !== ''
+            ? `
+              ${hero}&width=640 640w,
+              ${hero}&width=768 768w,
+              ${hero}&width=1024 1024w,
+              ${hero}&width=1280 1820w,
+              ${hero}&width=1536 1536w
+            `
+            : undefined}
           alt=""
           sizes="100vw"
           loading="eager"
@@ -67,7 +76,7 @@ export default function HomePage() {
               >
                 <img
                   className="z-10 absolute w-full h-full object-cover inset-0 object-cover transition transform group-hover:scale-105"
-                  src={imgSrcOr(collection.image) + '?width=630'}
+                  src={imgUrl(collection.image, '630')}
                   alt={collection.image?.altText || ''}
                   sizes="630px"
                   loading="lazy"

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
-import { imgSrcOr, Product } from '@/common/interfaces'
+import { imgUrl, Product } from '@/common/interfaces'
 import { useShop } from '@/common/ShopContext'
 
 export default function ProductItem({ product, className }: { product: Product, className?: string }) {
@@ -54,7 +54,7 @@ export default function ProductItem({ product, className }: { product: Product, 
           <div className={`relative w-full aspect-square rounded `}>
             <img
               className={`${img} ${(shouldTransition && hot) ? 'opacity-0' : 'opacity-1'}`}
-              src={imgSrcOr(image, '/600.svg') + '?width=510'}
+              src={imgUrl(image, '510', '/600.svg')}
               alt={image?.altText || product.title}
               sizes="510px"
               loading="lazy"
@@ -63,7 +63,7 @@ export default function ProductItem({ product, className }: { product: Product, 
             {shouldTransition &&
               <img
                 className={`${img} ${(hot) ? 'opacity-1' : 'opacity-0'}`}
-                src={imgSrcOr(hotImage, '/600.svg') + '?width=510'}
+                src={imgUrl(hotImage, '510', '/600.svg')}
                 alt={hotImage?.altText || product.title}
                 sizes="510px"
                 loading="lazy"

@@ -1,6 +1,6 @@
 import Head from 'next/head'
 import { useState, useEffect } from 'react'
-import { imgSrcOr, Product, ProductImage } from '@/common/interfaces'
+import { imgUrl, Product, ProductImage } from '@/common/interfaces'
 import { useShop } from '@/common/ShopContext'
 import { useRouter } from 'next/router'
 
@@ -133,7 +133,7 @@ function ProductDetails({ product }: { product: Product }) {
         <div className="md:w-[20rem] lg:w-[30rem] flex-none">
           <img
             className="w-full aspect-square mb-3 rounded-lg object-contain"
-            src={imgSrcOr(image, '/600.svg') + '?width=800'}
+            src={imgUrl(image, '800', '/600.svg')}
             alt={image?.altText || ''}
             sizes="800px"
             loading="eager"
@@ -145,7 +145,7 @@ function ProductDetails({ product }: { product: Product }) {
                 key={img.id}
                 onClick={() => setImage(img)}
                 className="cursor-pointer w-full aspect-square rounded border border-gray-400 bg-white object-cover"
-                src={imgSrcOr(img, '/600.svg') + '?width=120'}
+                src={imgUrl(img, '120', '/600.svg')}
                 alt={img?.altText || ''}
                 sizes="120px"
                 loading="lazy"

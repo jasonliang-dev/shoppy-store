@@ -6,7 +6,7 @@ import Link from 'next/link'
 import type { AppProps } from 'next/app'
 import { Inter } from '@next/font/google'
 import ShopContext from '@/common/ShopContext'
-import { Cart, Shop, Collection, Money, imgSrcOr } from '@/common/interfaces'
+import { Cart, Shop, Collection, Money, imgUrl } from '@/common/interfaces'
 import Nav from '@/common/Nav'
 import useCart from '@/common/useCart'
 import { useRouter } from 'next/router'
@@ -239,7 +239,7 @@ function CartOverlay({
                       <div className="flex items-center gap-x-2 mr-6">
                         <img
                           className="flex-none w-[3rem] border rounded aspect-square shadow-sm bg-white object-contain"
-                          src={imgSrcOr(item.variant.image, '/600.svg') + '?width=80'}
+                          src={imgUrl(item.variant.image, '80', '/600.svg')}
                           alt={item.variant.image?.altText || item.variant.title}
                           sizes="80px"
                           loading="lazy"
