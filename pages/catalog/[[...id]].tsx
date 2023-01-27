@@ -53,10 +53,6 @@ export default function CatalogPage() {
   const collection = collections.find(col => col.handle === handle)
 
   useEffect(() => {
-    if (handle !== '') {
-      setSearchText('')
-    }
-
     async function refreshProducts() {
       setProducts(p => ({ list: p.list, stat: 'loading' }))
 
@@ -84,6 +80,12 @@ export default function CatalogPage() {
     refreshProducts()
   }, [handle, search, sort])
 
+  useEffect(() => {
+    if (handle !== '') {
+      setSearchText('')
+    }
+  }, [handle])
+
   return (
     <div className="container mx-auto px-2 mt-8">
       <Head>
@@ -103,9 +105,19 @@ export default function CatalogPage() {
               router.push(url)
             }}
           >
-            <label htmlFor="search" className="block font-bold text-sm text-gray-700 mb-1">
-              Search
-            </label>
+            <div className="mb-1 flex items-baseline font-bold text-sm">
+              <label htmlFor="search" className="text-gray-700">
+                Search
+              </label>
+              {search &&
+                <Link
+                  onClick={() => setSearchText('')}
+                  className="text-purple-600 hover:text-purple-900 hover:underline ml-3"
+                  href="/catalog"
+                >
+                  Clear
+                </Link>}
+            </div>
             <div className="flex items-stretch">
               <input
                 id="search"
@@ -123,11 +135,11 @@ export default function CatalogPage() {
             </div>
           </form>
           <div className="hidden md:block">
-            <span className="flex justify-between items-baseline font-bold text-sm text-gray-700 mb-2">
+            <span className="flex items-baseline font-bold text-sm text-gray-700 mb-2">
               Collections
               {collection &&
                 <Link
-                  className="text-purple-600 hover:text-purple-900 hover:underline"
+                  className="text-purple-600 hover:text-purple-900 hover:underline ml-3"
                   href="/catalog"
                 >
                   View all
@@ -245,7 +257,11 @@ export default function CatalogPage() {
               ]}
             />
           </div>
-          {products.stat === 'loaded' &&
+          {products.stat === 'loaded' && products.list.length === 0 &&
+            <div className="border border-gray-300 shadow-inner rounded py-[5rem] text-center bg-gray-200">
+              <h3 className="font-semibold text-2xl mb-2">No products found!</h3>
+            </div>}
+          {products.stat === 'loaded' && products.list.length > 0 &&
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {products.list.map((product, index) =>
                 <div

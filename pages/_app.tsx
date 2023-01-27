@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Transition } from '@headlessui/react'
+import { Dialog, Transition } from '@headlessui/react'
 import '@/styles/globals.css'
 import Head from 'next/head'
 import Link from 'next/link'
@@ -9,6 +9,7 @@ import ShopContext from '@/common/ShopContext'
 import { Cart, Shop, Collection, Money, imgSrcOr } from '@/common/interfaces'
 import Nav from '@/common/Nav'
 import useCart from '@/common/useCart'
+import { useRouter } from 'next/router'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -171,6 +172,7 @@ function CartOverlay({
   setOpen: (open: boolean) => void,
   moneyFormat: (money: Money, factor?: number) => string,
 }) {
+  const router = useRouter()
   const {
     cart,
     updating,
@@ -180,12 +182,23 @@ function CartOverlay({
     inputBlur,
   } = useCart()
 
+  useEffect(() => {
+    function routeChangeStart() {
+      setOpen(false)
+    }
+
+    router.events.on('routeChangeStart', routeChangeStart)
+
+    return () => {
+      router.events.off('routeChangeStart', routeChangeStart)
+    }
+  }, [router.events, setOpen])
+
   return (
     <Transition show={open}>
-      <div className="z-[9999] fixed inset-0">
+      <Dialog onClose={() => setOpen(false)}>
         <Transition.Child
-          onClick={() => setOpen(false)}
-          className="absolute z-10 bg-gray-300 inset-0 opacity-75"
+          className="fixed bg-gray-300 inset-0"
           enter="transition-opacity duration-300"
           enterFrom="opacity-0"
           enterTo="opacity-75"
@@ -194,7 +207,7 @@ function CartOverlay({
           leaveTo="opacity-0"
         />
         <Transition.Child
-          className="absolute z-20 right-4 left-4 sm:left-auto inset-y-4"
+          className="fixed right-4 left-4 sm:left-auto inset-y-4"
           enter="transition ease-in-out duration-300 transform"
           enterFrom="translate-x-full opacity-0"
           enterTo="translate-x-0 opacity-100"
@@ -202,9 +215,19 @@ function CartOverlay({
           leaveFrom="translate-x-0 opacity-100"
           leaveTo="translate-x-full opacity-0"
         >
-          <div className="bg-white rounded-lg shadow-lg border border-gray-300 flex flex-col sm:w-[30rem] h-full">
-            <h2 className="font-black text-3xl mb-3 pt-4 px-4">Your cart</h2>
+          <Dialog.Panel className="bg-white rounded-lg shadow-lg border border-gray-300 flex flex-col sm:w-[30rem] h-full">
+            <Dialog.Title className="font-black text-3xl mb-3 pt-4 px-4">Your cart</Dialog.Title>
             <div className="flex-1 overflow-auto">
+              {cart?.lineItems.length === 0 &&
+                <div className="flex flex-col gap-y-2 justify-center h-full items-center">
+                  <h3 className="font-semibold text-2xl">Your cart is empty!</h3>
+                  <Link
+                    className="text-purple-600 hover:text-purple-700 hover:underline"
+                    href="/catalog"
+                  >
+                    Shop products
+                  </Link>
+                </div>}
               <ul className={`${updating ? 'opacity-75' : ''} flex flex-col gap-y-8`}>
                 {cart?.lineItems.map((item, index) => {
                   if (!item.variant) {
@@ -224,7 +247,6 @@ function CartOverlay({
                         />
                         <div className="ml-3">
                           <Link
-                            onClick={() => setOpen(false)}
                             href={{
                               pathname: '/product/[id]',
                               query: { id: item.variant.product.handle },
@@ -274,17 +296,17 @@ function CartOverlay({
               >
                 Close
               </button>
-              <Link
-                onClick={() => setOpen(false)}
-                href="/cart"
-                className="@btn-purple px-2 py-1 font-semibold"
-              >
-                View cart
-              </Link>
+              {cart?.lineItems.length !== 0 &&
+                <Link
+                  href="/cart"
+                  className="@btn-purple px-2 py-1 font-semibold"
+                >
+                  View cart
+                </Link>}
             </div>
-          </div>
+          </Dialog.Panel>
         </Transition.Child>
-      </div>
+      </Dialog>
     </Transition>
   )
 }

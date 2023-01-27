@@ -34,9 +34,9 @@ function CartContent() {
 
   if (cart.lineItems.length === 0) {
     return (
-      <div className="border border-gray-400 shadow rounded py-[5rem] text-center bg-white">
-        <h3 className="font-semibold text-2xl mb-4">Your cart is empty!</h3>
-        <Link href="/" className="px-4 py-2 rounded shadow-sm bg-purple-500 hover:bg-purple-600 text-white border border-purple-800">
+      <div className="border border-gray-300 shadow-inner rounded py-[5rem] text-center bg-gray-200">
+        <h3 className="font-semibold text-2xl mb-2">Your cart is empty!</h3>
+        <Link href="/" className="text-purple-600 hover:text-purple-700 hover:underline">
           View products
         </Link>
       </div>

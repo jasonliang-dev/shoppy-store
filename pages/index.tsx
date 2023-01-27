@@ -83,7 +83,7 @@ export default function HomePage() {
               </Link>
             </div>)}
         </div>
-        <div className="flex justify-between items-baseline mt-12 mb-4">
+        <div className="flex flex-col sm:flex-row justify-between items-baseline mt-12 mb-4">
           <h2 className="font-black text-2xl">
             Featured Products
           </h2>
